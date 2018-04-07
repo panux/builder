@@ -88,7 +88,8 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 	//do stuff
 	for _, p := range pg.ListPackages() {
 		//out directory rule
-		dirRule(dirsec, makefile.FilePath(path.Join("out", p))).AddDep(ot)
+		odir := makefile.FilePath(path.Join("out", p))
+		dirRule(dirsec, odir).AddDep(ot)
 		//add pkginfo rule
 		pkin := makefile.FilePath(filepath.Join("out", p, ".pkginfo"))
 		b.NewRule(pkin).
