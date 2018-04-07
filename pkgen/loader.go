@@ -10,7 +10,7 @@ import (
 //Loader is an interface for source loaders
 type Loader interface {
 	SupportedProtocols() ([]string, error)
-	Get(*url.URL) (io.ReadCloser, error)
+	Get(*url.URL) (int64, io.ReadCloser, error) //length (or < 1 for unknown) first
 }
 
 type multiLoader struct {
@@ -30,10 +30,10 @@ var ErrMissingHash = errors.New("insecure resource does not have hash")
 func (ml *multiLoader) SupportedProtocols() ([]string, error) {
 	return ml.protos, nil
 }
-func (ml *multiLoader) Get(u *url.URL) (io.ReadCloser, error) {
+func (ml *multiLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
 	nl := ml.loaders[u.Scheme]
 	if nl == nil {
-		return nil, ErrUnsupportedProtocol
+		return -1, nil, ErrUnsupportedProtocol
 	}
 	return nl.Get(u)
 }

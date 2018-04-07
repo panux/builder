@@ -51,18 +51,18 @@ func (c *DlClient) Status() (*Status, error) {
 }
 
 //Get runs Loader.Get on the server (with cache)
-func (c *DlClient) Get(u *url.URL) (io.ReadCloser, error) {
+func (c *DlClient) Get(u *url.URL) (int64, io.ReadCloser, error) {
 	gurl, err := url.Parse("/get")
 	if err != nil {
-		return nil, err
+		return -1, nil, err
 	}
 	gurl.Query().Add("url", u.String())
 	gurl = c.base.ResolveReference(gurl)
 	resp, err := c.cli.Get(gurl.String())
 	if err != nil {
-		return nil, err
+		return -1, nil, err
 	}
-	return resp.Body, nil
+	return resp.ContentLength, resp.Body, nil
 }
 
 //SupportedProtocols implements Loader.SupportedProtocols

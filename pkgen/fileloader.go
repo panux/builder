@@ -17,8 +17,17 @@ func (fl fileLoader) SupportedProtocols() ([]string, error) {
 	return fprotos, nil
 }
 
-func (fl fileLoader) Get(u *url.URL) (io.ReadCloser, error) {
-	return fl.fs.Open(u.Path)
+func (fl fileLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
+	var l int64
+	info, err := fl.fs.Stat(u.Path)
+	if err == nil {
+		l = info.Size()
+	}
+	f, err := fl.fs.Open(u.Path)
+	if err != nil {
+		return -1, nil, err
+	}
+	return l, f, nil
 }
 
 //NewFileLoader returns a new Loader which loads files from the given VFS

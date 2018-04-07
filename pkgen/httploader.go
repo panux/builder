@@ -21,35 +21,35 @@ var hprotos = []string{"http", "https"}
 func (hl *httpLoader) SupportedProtocols() ([]string, error) {
 	return hprotos, nil
 }
-func (hl *httpLoader) Get(u *url.URL) (io.ReadCloser, error) {
+func (hl *httpLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
 	shasum := u.Query().Get("sha256sum")
 	switch u.Scheme { //check that the scheme is supported
 	case "http":
 		if shasum == "" { //insecure resource, needs hash
-			return nil, ErrMissingHash
+			return -1, nil, ErrMissingHash
 		}
 	case "https":
 	default:
-		return nil, ErrUnsupportedProtocol
+		return -1, nil, ErrUnsupportedProtocol
 	}
 	var shs []byte
 	if shasum != "" {
 		sum, err := hex.DecodeString(shasum) //decode sha256sum from hex
 		if err != nil {
-			return nil, err
+			return -1, nil, err
 		}
 		if len(sum) != sha256.Size { //check that it is the right length
-			return nil, errors.New("invalid hash: wrong length")
+			return -1, nil, errors.New("invalid hash: wrong length")
 		}
 		shs = sum
 	}
 	resp, err := hl.cli.Get(u.String())
 	if err != nil {
-		return nil, err
+		return -1, nil, err
 	}
 	if shs != nil { //it is hashed, download to memory and verify
 		if resp.ContentLength > int64(hl.maxbuf) {
-			return nil, ErrExceedsMaxBuffer
+			return -1, nil, ErrExceedsMaxBuffer
 		}
 		defer resp.Body.Close()
 		buf := bytes.NewBuffer(nil)
@@ -60,14 +60,14 @@ func (hl *httpLoader) Get(u *url.URL) (io.ReadCloser, error) {
 		mrt.r = t
 		_, err = io.Copy(buf, mrt)
 		if err != nil {
-			return nil, err
+			return -1, nil, err
 		}
 		if !bytes.Equal(h.Sum(nil), shs) {
-			return nil, errors.New("hash mismatch")
+			return -1, nil, errors.New("hash mismatch")
 		}
-		return ioutil.NopCloser(buf), nil
+		return resp.ContentLength, ioutil.NopCloser(buf), nil
 	}
-	return resp.Body, nil
+	return resp.ContentLength, resp.Body, nil
 }
 
 //maxReader is a reader that returns ErrExceedsMaxBuffer if too much is read
