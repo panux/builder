@@ -118,6 +118,7 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 		)
 		b.NewRule(trname).
 			AddDep(st).
+			AddDep(mv.TarOut.Sub()).
 			Print(makefile.JoinText(" ",
 				makefile.RawText("TAR"),
 				tname,
