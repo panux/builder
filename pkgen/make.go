@@ -100,7 +100,7 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 					),
 				),
 			).
-			AddDep(ot).
+			AddDep(odir).
 			Print(makefile.JoinText(" ",
 				makefile.RawText("PKGINFO"),
 				makefile.FilePath(p),
