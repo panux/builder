@@ -118,7 +118,7 @@ func main() {
 			},
 			Action: func(ctx *cli.Context) (err error) {
 				if len(ctx.Args()) != 1 {
-					return cli.NewExitError("too many arguments", 65)
+					return cli.NewExitError("wrong number of arguments", 65)
 				}
 				f, err := os.OpenFile(ctx.String("makefile"), os.O_CREATE|os.O_WRONLY, 0600)
 				if err != nil {
