@@ -141,10 +141,9 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 		AddDep(mv.SrcTar.Sub()).AddDep(srct).
 		NewCmd("tar").
 		AddArg(makefile.RawText("-xf")).AddArg(makefile.Dep1).
-		AddArg(makefile.RawText("-C")).AddArg(srct).
-		AddArg(makefile.RawText("."))
+		AddArg(makefile.RawText("-C")).AddArg(srct)
 	//add script rule
-	sr := b.NewRule(st).OneShell()
+	sr := b.NewRule(st).OneShell().AddDep(uts).AddDep(makefile.RawText("pkginfos"))
 	sr.NewCmd("set -ex")
 	for _, l := range pg.Script {
 		sr.NewCmd(l)
