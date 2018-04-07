@@ -53,13 +53,19 @@ func dirRule(b *makefile.Builder, dirname makefile.Text) *makefile.Rule {
 //GenMakeInfoComment generates a Makefile comment with pretty-printed info
 func (pg *PackageGenerator) GenMakeInfoComment(b *makefile.Builder) {
 	infotitle := "Package Information"
+	def := func(v string, d string) string {
+		if v == "" {
+			return d
+		}
+		return v
+	}
 	b.Comment().
 		Line(infotitle).Line(strings.Repeat("-", len(infotitle))). //title
 		Line(fmt.Sprintf("Packages: %s", strings.Join(pg.ListPackages(), " "))).
 		Line(fmt.Sprintf("Version: %s", pg.Version)).
 		Line(fmt.Sprintf("Arch (host, build): %s, %s", pg.HostArch.String(), pg.BuildArch.String())).
 		Line(fmt.Sprintf("Builder: %s", pg.Builder)).
-		Line(fmt.Sprintf("Build Dependencies: %s", strings.Join(pg.BuildDependencies, " ")))
+		Line(fmt.Sprintf("Build Dependencies: %s", def(strings.Join(pg.BuildDependencies, " "), "None")))
 }
 
 //GenMake adds the PackageGenerator script to a Makefile
