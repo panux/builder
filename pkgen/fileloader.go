@@ -13,8 +13,8 @@ type fileLoader struct {
 
 var fprotos = []string{"file"}
 
-func (fl fileLoader) SupportedProtocols() []string {
-	return fprotos
+func (fl fileLoader) SupportedProtocols() ([]string, error) {
+	return fprotos, nil
 }
 
 func (fl fileLoader) Get(u *url.URL) (io.ReadCloser, error) {

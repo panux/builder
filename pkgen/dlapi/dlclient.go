@@ -66,7 +66,7 @@ func (c *DlClient) Get(u *url.URL) (io.ReadCloser, error) {
 }
 
 //SupportedProtocols implements Loader.SupportedProtocols
-func (c *DlClient) SupportedProtocols() []string {
+func (c *DlClient) SupportedProtocols() ([]string, error) {
 	purl, err := url.Parse("/protos")
 	if err != nil {
 		panic(err)
@@ -74,12 +74,12 @@ func (c *DlClient) SupportedProtocols() []string {
 	purl = c.base.ResolveReference(purl)
 	resp, err := c.cli.Get(purl.String())
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	var protos []string
 	err = json.NewDecoder(resp.Body).Decode(&protos)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return protos
+	return protos, nil
 }

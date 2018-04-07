@@ -9,7 +9,7 @@ import (
 
 //Loader is an interface for source loaders
 type Loader interface {
-	SupportedProtocols() []string
+	SupportedProtocols() ([]string, error)
 	Get(*url.URL) (io.ReadCloser, error)
 }
 
@@ -27,8 +27,8 @@ var ErrExceedsMaxBuffer = errors.New("resource exceeds maximum buffer size")
 //ErrMissingHash is an error returned by Loader.Get if the resource is being loaded over an insecure protocol and does not have a hash
 var ErrMissingHash = errors.New("insecure resource does not have hash")
 
-func (ml *multiLoader) SupportedProtocols() []string {
-	return ml.protos
+func (ml *multiLoader) SupportedProtocols() ([]string, error) {
+	return ml.protos, nil
 }
 func (ml *multiLoader) Get(u *url.URL) (io.ReadCloser, error) {
 	nl := ml.loaders[u.Scheme]
@@ -42,13 +42,16 @@ func (ml *multiLoader) Get(u *url.URL) (io.ReadCloser, error) {
 //SupportedProtocols is the union of the SupportedProtocols sets from loaders
 //If multiple loaders support the same protocol, the last one will be used
 //If no loaders are input, NewMultiLoader will return nil
-func NewMultiLoader(loaders ...Loader) Loader {
+func NewMultiLoader(loaders ...Loader) (Loader, error) {
 	if len(loaders) == 0 {
-		return nil
+		return nil, nil
 	}
 	ldm := make(map[string]Loader) //generate map of scheme to NetLoader
 	for _, l := range loaders {
-		protos := l.SupportedProtocols()
+		protos, err := l.SupportedProtocols()
+		if err != nil {
+			return nil, err
+		}
 		for _, p := range protos {
 			ldm[p] = l
 		}
@@ -63,5 +66,5 @@ func NewMultiLoader(loaders ...Loader) Loader {
 	ml := new(multiLoader)
 	ml.loaders = ldm
 	ml.protos = pr
-	return ml
+	return ml, nil
 }

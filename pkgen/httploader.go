@@ -18,8 +18,8 @@ type httpLoader struct {
 
 var hprotos = []string{"http", "https"}
 
-func (hl *httpLoader) SupportedProtocols() []string {
-	return hprotos
+func (hl *httpLoader) SupportedProtocols() ([]string, error) {
+	return hprotos, nil
 }
 func (hl *httpLoader) Get(u *url.URL) (io.ReadCloser, error) {
 	shasum := u.Query().Get("sha256sum")
