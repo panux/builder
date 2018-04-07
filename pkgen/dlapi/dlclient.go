@@ -67,7 +67,7 @@ func (c *DlClient) Get(u *url.URL) (io.ReadCloser, error) {
 
 //SupportedProtocols implements Loader.SupportedProtocols
 func (c *DlClient) SupportedProtocols() []string {
-	purl, err := url.Parse("/status")
+	purl, err := url.Parse("/protos")
 	if err != nil {
 		panic(err)
 	}
