@@ -101,9 +101,7 @@ func main() {
 							switch req.Type {
 							case "exec":
 								shstr := string(req.Payload)
-								//shstr = strings.TrimLeft(shstr, "\000\b")
 								shstr = shstr[4:]
-								log.Printf("Shstr: %q\n", shstr)
 								//please build busybox with CONFIG_FEATURE_SH_STANDALONE
 								cmd := exec.Command("busybox", "sh", "-c", shstr)
 								cmd.Stdin = sch
@@ -120,7 +118,6 @@ func main() {
 										return
 									}
 								}
-								log.Printf("done %d\n", exitcode)
 								var buf bytes.Buffer
 								err = binary.Write(&buf, binary.BigEndian, exitcode>>8)
 								if err != nil {
@@ -130,7 +127,6 @@ func main() {
 								if err != nil {
 									log.Fatalf("Failed to send exit-status request: %q\n", err.Error())
 								}
-								log.Println("wow")
 								return
 							}
 						}
