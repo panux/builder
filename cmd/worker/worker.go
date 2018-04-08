@@ -100,9 +100,12 @@ func main() {
 						for req := range reqs {
 							switch req.Type {
 							case "exec":
-								shstr := req.Payload
+								shstr := string(req.Payload)
+								//shstr = strings.TrimLeft(shstr, "\000\b")
+								shstr = shstr[4:]
+								log.Printf("Shstr: %q\n", shstr)
 								//please build busybox with CONFIG_FEATURE_SH_STANDALONE
-								cmd := exec.Command("/bin/busybox", "sh", "-c", string(shstr))
+								cmd := exec.Command("busybox", "sh", "-c", shstr)
 								cmd.Stdin = sch
 								cmd.Stdout = sch
 								cmd.Stderr = sch.Stderr()
@@ -117,9 +120,18 @@ func main() {
 										return
 									}
 								}
+								log.Printf("done %d\n", exitcode)
 								var buf bytes.Buffer
-								binary.Write(&buf, binary.BigEndian, exitcode)
-								sch.SendRequest("exit-status", false, buf.Bytes())
+								err = binary.Write(&buf, binary.BigEndian, exitcode>>8)
+								if err != nil {
+									log.Fatalf("Failed to encode exit code: %q\n", err.Error())
+								}
+								_, err = sch.SendRequest("exit-status", false, buf.Bytes())
+								if err != nil {
+									log.Fatalf("Failed to send exit-status request: %q\n", err.Error())
+								}
+								log.Println("wow")
+								return
 							}
 						}
 					}()
