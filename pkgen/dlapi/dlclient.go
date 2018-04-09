@@ -1,3 +1,4 @@
+//Package dlapi implements a client for github.com/panux/builder/cmd/dlserver
 package dlapi
 
 import (

@@ -1,3 +1,4 @@
+//Package pkgen processes Panux .pkgen packaging files
 package pkgen
 
 import (
