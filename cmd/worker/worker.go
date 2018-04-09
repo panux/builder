@@ -8,13 +8,22 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"os/exec"
+	"os/signal"
 	"syscall"
 
 	"golang.org/x/crypto/ssh"
 )
 
 func main() {
+	stopchan := make(chan os.Signal, 1)
+	signal.Notify(stopchan, syscall.SIGTERM)
+	go func() {
+		sig := <-stopchan
+		log.Printf("Recieved signal %q, exiting. . . \n", sig.String())
+		os.Exit(0)
+	}()
 	var authkeypath string
 	var srvkeypath string
 	var listenaddr string
