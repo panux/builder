@@ -10,14 +10,23 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/panux/builder/pkgen"
 	"github.com/panux/builder/pkgen/dlapi"
 )
 
 func main() {
+	stopchan := make(chan os.Signal, 1)
+	signal.Notify(stopchan, syscall.SIGTERM)
+	go func() {
+		sig := <-stopchan
+		log.Printf("Recieved signal %q, exiting. . . \n", sig.String())
+		os.Exit(0)
+	}()
 	var maxbuf uint
 	var h string
 	var cachedir string
