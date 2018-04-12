@@ -20,6 +20,15 @@ type Client struct {
 	dial *net.Dialer
 }
 
+//NewClient creates a new Client
+func NewClient(u *url.URL, nd *net.Dialer, hcl *http.Client) *Client {
+	return &Client{
+		turl: u,
+		dial: nd,
+		hcl:  hcl,
+	}
+}
+
 //Status is the JSON struct sent by /status
 type Status struct {
 	State   string `json:"state"` //should be "running"
