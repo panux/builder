@@ -55,6 +55,28 @@ func (cli *Client) Status() (*Status, error) {
 	return st, nil
 }
 
+//PackageWriteHandler is a function that saves a package in the io.ReadCloser with the name specified by the string
+type PackageWriteHandler func(string, io.ReadCloser) error
+
+//PackageGetter is a function that loads a package with the specified name into the io.WriteCloser
+type PackageGetter func(string, io.WriteCloser) error
+
+//BuildSettings is a struct containing the settings for a Build op
+type BuildSettings struct {
+	//Log is where log messages get sent
+	//Optional (defaults to go log).
+	Log chan<- LogMessage
+	//The vfs to load files from
+	//Required.
+	FS vfs.FileSystem
+	//The PackageWriter to use
+	//Required.
+	PackageWriter PackageWriteHandler
+	//The PackageGetter to use
+	//Required.
+	PackageGetter PackageGetter
+}
+
 //Build runs a build using the BuildManager.
 //Log output will be sent to logch (which is closed afterward).
 //A slow reader on logch may slow the build process.
@@ -63,7 +85,17 @@ func (cli *Client) Status() (*Status, error) {
 //if wpkg returns an error, it will be propogated to the error of the Build function.
 //gpkg is a function called to load a dependent package.
 //arguments for gpkg are like wpkg but with a writer, and error handling is the same.
-func (cli *Client) Build(pk *pkgen.PackageGenerator, logch chan<- LogMessage, fs vfs.FileSystem, wpkg func(string, io.ReadCloser) error, gpkg func(string, io.WriteCloser) error) error {
+func (cli *Client) Build(pk *pkgen.PackageGenerator, bs BuildSettings) error {
+	fs, gpkg, logch, wpkg := bs.FS, bs.PackageGetter, bs.Log, bs.PackageWriter
+	if logch == nil {
+		lch := make(chan LogMessage)
+		logch = lch
+		go func() {
+			for m := range lch {
+				log.Println(m)
+			}
+		}()
+	}
 	//genetate request URL
 	ru, err := url.Parse("/status")
 	if err != nil {
