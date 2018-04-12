@@ -62,6 +62,7 @@ func NewMsgStreamWriter(w io.Writer) *MsgStreamWriter {
 //MsgStreamReader is a reader for Messages
 type MsgStreamReader struct {
 	dec     *gob.Decoder
+	strlck  sync.Mutex
 	dstrs   map[uint32]chan<- []byte
 	streamn uint32
 }
@@ -84,13 +85,24 @@ var ErrBadMessage = errors.New("bad message")
 
 //HandleDat handles a data message (DatMessage or StreamDoneMessage)
 func (msr *MsgStreamReader) HandleDat(m Message) error {
+	msr.strlck.Lock()
+	defer msr.strlck.Unlock()
 	switch msg := m.(type) {
 	case DatMessage:
 		dch := msr.dstrs[msg.Stream]
 		if dch == nil {
 			return ErrStreamNotFound
 		}
-		dch <- msg.Dat
+		return func() (err error) {
+			defer func() {
+				if recover() != nil {
+					delete(msr.dstrs, msg.Stream)
+					err = ErrStreamNotFound
+				}
+			}()
+			dch <- msg.Dat
+			return
+		}()
 	case StreamDoneMessage:
 		dch := msr.dstrs[uint32(msg)]
 		if dch == nil {
@@ -104,7 +116,7 @@ func (msr *MsgStreamReader) HandleDat(m Message) error {
 }
 
 type datReader struct {
-	bch <-chan []byte
+	bch chan []byte
 	buf []byte
 }
 
@@ -121,10 +133,16 @@ func (dr *datReader) Read(buf []byte) (int, error) {
 	dr.buf = dat
 	return dr.Read(buf)
 }
+func (dr *datReader) Close() error {
+	close(dr.bch)
+	return nil
+}
 
 //Stream returns a stream number and an io.Reader which will read data from the stream
 //The io.Reader should be read from another goroutine
-func (msr *MsgStreamReader) Stream(buf int) (uint32, io.Reader) {
+func (msr *MsgStreamReader) Stream(buf int) (uint32, io.ReadCloser) {
+	msr.strlck.Lock()
+	defer msr.strlck.Unlock()
 	defer func() {
 		msr.streamn++
 	}()
@@ -149,4 +167,19 @@ func NewMsgStreamReader(r io.Reader) *MsgStreamReader {
 		dec:   gob.NewDecoder(r),
 		dstrs: make(map[uint32]chan<- []byte),
 	}
+}
+
+//WorkMsgConn handles Message streams on a conn
+func WorkMsgConn(c io.ReadWriteCloser, f func(*MsgStreamWriter, *MsgStreamReader) error) (err error) {
+	defer c.Close()
+	defer func() {
+		e := recover()
+		if e != nil {
+			err = e.(error)
+		}
+	}()
+	w := NewMsgStreamWriter(c)
+	r := NewMsgStreamReader(c)
+	defer r.Halt()
+	return f(w, r)
 }

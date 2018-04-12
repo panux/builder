@@ -87,6 +87,17 @@ type StreamDoneMessage uint32
 
 func (sdm StreamDoneMessage) m() {}
 
+//DoneMessage is a message that everything is completed and has been sent
+type DoneMessage struct{}
+
+func (dm DoneMessage) m() {}
+
+//PackagesReadyMessage is a message listing packages that are ready for transfer
+//The client should respond with a PackageRequestMessage for each package
+type PackagesReadyMessage []string
+
+func (prm PackagesReadyMessage) m() {}
+
 func init() {
 	gob.RegisterName("bmapi.ErrorMessage", ErrorMessage(""))
 	gob.RegisterName("bmapi.LogMessage", LogMessage{})
@@ -95,4 +106,5 @@ func init() {
 	gob.RegisterName("bmapi.FileRequestMessage", FileRequestMessage{})
 	gob.RegisterName("bmapi.PackageRequestMessage", PackageRequestMessage{})
 	gob.RegisterName("bmapi.StreamDoneMessage", StreamDoneMessage(0))
+	gob.RegisterName("bmapi.DoneMessage", DoneMessage{})
 }
