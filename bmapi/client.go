@@ -55,14 +55,14 @@ func (cli *Client) Status() (*Status, error) {
 	return st, nil
 }
 
-//Build runs a build using the BuildManager
-//Log output will be sent to logch (which is closed afterward)
-//A slow reader on logch may slow the build process
-//wpkg is a function used to store the output packages
-//wpkg takes 2 arguments: the name of the package, then an io.ReadCloser of the package (in .tar.gz format)
-//if wpkg returns an error, it will be propogated to the error of the Build function
-//gpkg is a function called to load a dependent package
-//arguments for gpkg are like wpkg but with a writer, and error handling is the same
+//Build runs a build using the BuildManager.
+//Log output will be sent to logch (which is closed afterward).
+//A slow reader on logch may slow the build process.
+//wpkg is a function used to store the output packages.
+//wpkg takes 2 arguments: the name of the package, then an io.ReadCloser of the package (in .tar.gz format).
+//if wpkg returns an error, it will be propogated to the error of the Build function.
+//gpkg is a function called to load a dependent package.
+//arguments for gpkg are like wpkg but with a writer, and error handling is the same.
 func (cli *Client) Build(pk *pkgen.PackageGenerator, logch chan<- LogMessage, fs vfs.FileSystem, wpkg func(string, io.ReadCloser) error, gpkg func(string, io.WriteCloser) error) error {
 	//genetate request URL
 	ru, err := url.Parse("/status")
