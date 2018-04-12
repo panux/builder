@@ -92,7 +92,7 @@ func (cli *Client) Build(pk *pkgen.PackageGenerator, bs BuildSettings) error {
 		}()
 	}
 	//genetate request URL
-	ru, err := url.Parse("/status")
+	ru, err := url.Parse("/build")
 	if err != nil {
 		return err
 	}
