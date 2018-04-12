@@ -55,15 +55,17 @@ func (cli *Client) Status() (*Status, error) {
 	return st, nil
 }
 
-//PackageWriteHandler is a function that saves a package in the io.ReadCloser with the name specified by the string
+//PackageWriteHandler is a function that saves a package in the io.ReadCloser with the name specified by the string.
+//Package is in .tar.gz format.
 type PackageWriteHandler func(string, io.ReadCloser) error
 
-//PackageGetter is a function that loads a package with the specified name into the io.WriteCloser
+//PackageGetter is a function that loads a package with the specified name into the io.WriteCloser.
+//Package is in .tar.gz format.
 type PackageGetter func(string, io.WriteCloser) error
 
 //BuildSettings is a struct containing the settings for a Build op
 type BuildSettings struct {
-	//Log is where log messages get sent
+	//Log is where log messages get sent. Closed after use.
 	//Optional (defaults to go log).
 	Log chan<- LogMessage
 	//The vfs to load files from
@@ -78,13 +80,6 @@ type BuildSettings struct {
 }
 
 //Build runs a build using the BuildManager.
-//Log output will be sent to logch (which is closed afterward).
-//A slow reader on logch may slow the build process.
-//wpkg is a function used to store the output packages.
-//wpkg takes 2 arguments: the name of the package, then an io.ReadCloser of the package (in .tar.gz format).
-//if wpkg returns an error, it will be propogated to the error of the Build function.
-//gpkg is a function called to load a dependent package.
-//arguments for gpkg are like wpkg but with a writer, and error handling is the same.
 func (cli *Client) Build(pk *pkgen.PackageGenerator, bs BuildSettings) error {
 	fs, gpkg, logch, wpkg := bs.FS, bs.PackageGetter, bs.Log, bs.PackageWriter
 	if logch == nil {
