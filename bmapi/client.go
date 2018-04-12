@@ -114,7 +114,6 @@ func (cli *Client) Build(pk *pkgen.PackageGenerator, bs BuildSettings) error {
 		defer close(errch)
 		//create handler for file requests
 		flh := NewFileLoadHandler(w, fs)
-		_ = flh
 		droperr := func() {
 			err := recover()
 			if err != nil {
@@ -146,6 +145,8 @@ func (cli *Client) Build(pk *pkgen.PackageGenerator, bs BuildSettings) error {
 		//tend to channels
 		for {
 			select {
+			case err = <-errch:
+				return err
 			case m := <-rch:
 				switch mv := m.(type) {
 				case FileRequestMessage:
