@@ -4,3 +4,8 @@ services:
   - docker
 script:
   - ./build.sh
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push panux/dlserver panux/worker panux/buildmanager;
+    fi
