@@ -31,7 +31,10 @@ import (
 
 func main() {
 	var dlserver string
+	var h string
 	flag.StringVar(&dlserver, "dlserver", "", "Download server to use (direct if empty)")
+	flag.StringVar(&h, "http", ":8080", "HTTP listen address")
+	flag.Parse()
 	dload := pkgen.NewHTTPLoader(http.DefaultClient, 100*1024*1024)
 	if dlserver != "" {
 		u, err := url.Parse(dlserver)
@@ -82,6 +85,10 @@ func main() {
 	_ = loginkey
 	_ = authorizedkeys
 	log.Println("Running HTTP setup. . . ")
+	//add status probe
+	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Running. . . "))
+	})
 	//setup build handler
 	http.Handle("/build", websocket.Handler(func(c *websocket.Conn) {
 		bmapi.WorkMsgConn(c, func(w *bmapi.MsgStreamWriter, r *bmapi.MsgStreamReader) error {
@@ -525,6 +532,7 @@ func main() {
 			}
 		})
 	}))
+	log.Fatalf("Failed to listen and serve: %q\n", http.ListenAndServe(h, nil).Error())
 }
 
 type sshBot struct {
