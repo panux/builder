@@ -14,15 +14,16 @@ import (
 
 //PackageGenerator is the preprocessed pkgen
 type PackageGenerator struct {
-	Packages            map[string]Package //list of packages generated
-	Arch                ArchSet            //supported architectures (any means not sys-dependent, all means it will run on all)
-	HostArch, BuildArch Arch               //selected host and build arch
-	Version             string             //version of package (pre-processed)
-	Sources             []*url.URL         //list of source URLs
-	Script              []string           //script for building
-	BuildDependencies   []string           //build dependencies
-	Builder             string             //builder (bootstrap, docker, default)
-	Cross               bool               //whether or not the package can be cross-compiled
+	Packages          map[string]Package `json:"packages"` //list of packages generated
+	Arch              ArchSet            `json:"arch"`     //supported architectures (any means not sys-dependent, all means it will run on all)
+	HostArch          Arch               `json:"hostArch"` //selected host and build arch
+	BuildArch         Arch               `json:"buildArch"`
+	Version           string             `json:"version"`                     //version of package (pre-processed)
+	Sources           []*url.URL         `json:"sources,omitempty"`           //list of source URLs
+	Script            []string           `json:"script,omitempty"`            //script for building
+	BuildDependencies []string           `json:"buildDependencies,omitempty"` //build dependencies
+	Builder           string             `json:"builder"`                     //builder (bootstrap, docker, default)
+	Cross             bool               `json:"cross,omitempty"`             //whether or not the package can be cross-compiled
 }
 
 //Preprocess preprocesses a RawPackageGenerator into a PackageGenerator
