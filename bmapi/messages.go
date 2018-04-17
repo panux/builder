@@ -61,7 +61,7 @@ func (dm DatMessage) m() {}
 
 //PkgenMessage is a message containing the PackageGenerator to build
 type PkgenMessage struct {
-	Gen pkgen.PackageGenerator
+	Gen *pkgen.PackageGenerator
 }
 
 func (pkm PkgenMessage) m() {}

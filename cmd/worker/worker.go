@@ -112,7 +112,7 @@ func main() {
 								shstr := string(req.Payload)
 								shstr = shstr[4:]
 								//please build busybox with CONFIG_FEATURE_SH_STANDALONE
-								cmd := exec.Command("busybox", "sh", "-c", shstr)
+								cmd := exec.Command("busybox", "sh", "-e", "-c", shstr)
 								cmd.Stdin = sch
 								cmd.Stdout = sch
 								cmd.Stderr = sch.Stderr()
