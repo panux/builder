@@ -33,8 +33,8 @@ func (w *Worker) Close() error {
 	return nil
 }
 
-//Mkdir makes a directory on the worker
-//if mkparent is true, it will create parent directories
+//Mkdir makes a directory on the worker.
+//If mkparent is true, it will create parent directories.
 func (w *Worker) Mkdir(path string, mkparent bool) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/mkdir")
