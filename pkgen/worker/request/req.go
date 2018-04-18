@@ -58,6 +58,7 @@ func (r *Request) Sign(privkey *rsa.PrivateKey) ([]byte, error) {
 	rdat, err := json.Marshal(Sig{
 		Dat:       dat,
 		Signature: sig,
+		Key:       r.PublicKey,
 	})
 	if err != nil {
 		return nil, err
