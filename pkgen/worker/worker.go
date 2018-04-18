@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/panux/builder/pkgen/worker/request"
+	"github.com/panux/builder/pkgen/worker/internal"
 )
 
 //Worker is a worker API client
@@ -43,9 +43,9 @@ func (w *Worker) Mkdir(path string, mkparent bool) (err error) {
 	}
 
 	//prepare request
-	rdat, err := (&request.Request{
-		APIVersion: request.APIVersion,
-		Request: request.MkdirRequest{
+	rdat, err := (&internal.Request{
+		APIVersion: internal.APIVersion,
+		Request: internal.MkdirRequest{
 			Dir:    path,
 			Parent: mkparent,
 		},

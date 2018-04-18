@@ -1,5 +1,5 @@
-//Package request is used internally by worker (DO NOT USE EXTERNALLY)
-package request
+//Package internal is used internally by worker (DO NOT USE EXTERNALLY)
+package internal
 
 import "github.com/panux/builder/pkgen"
 
