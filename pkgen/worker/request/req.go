@@ -12,7 +12,7 @@ import (
 )
 
 //APIVersion is the current API version
-var APIVersion = 1
+var APIVersion = uint(1)
 
 //Request is the main request type
 type Request struct {

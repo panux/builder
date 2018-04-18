@@ -34,7 +34,8 @@ func (w *Worker) Close() error {
 }
 
 //Mkdir makes a directory on the worker
-func (w *Worker) Mkdir(path string) (err error) {
+//if mkparent is true, it will create parent directories
+func (w *Worker) Mkdir(path string, mkparent bool) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/mkdir")
 	if err != nil {
@@ -42,7 +43,13 @@ func (w *Worker) Mkdir(path string) (err error) {
 	}
 
 	//prepare request
-	rdat, err := (&request.Request{}).Sign(w.authkey)
+	rdat, err := (&request.Request{
+		APIVersion: request.APIVersion,
+		Request: request.MkdirRequest{
+			Dir:    path,
+			Parent: mkparent,
+		},
+	}).Sign(w.authkey)
 	if err != nil {
 		return
 	}
