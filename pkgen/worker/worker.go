@@ -4,20 +4,20 @@ package worker
 import (
 	"crypto/rsa"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
-	"github.com/panux/builder/pkgen/worker/internal"
+	"github.com/gorilla/websocket"
 )
 
 //Worker is a worker API client
 //It is not concurrency safe
 type Worker struct {
-	u       *url.URL        //URL of worker
-	hcl     *http.Client    //http client to use when making HTTP requests
-	authkey *rsa.PrivateKey //key to sign request with
-	pod     *workerPod      //worker pod kubernetes data
+	u       *url.URL          //URL of worker
+	hcl     *http.Client      //http client to use when making HTTP requests
+	wscl    *websocket.Dialer //websocket client to use when making websocket requests
+	authkey *rsa.PrivateKey   //key to sign request with
+	pod     *workerPod        //worker pod kubernetes data
 }
 
 //Close closes a worker (killing the pod and deleting the SSL secret)
@@ -31,44 +31,4 @@ func (w *Worker) Close() error {
 	}
 	w.pod = nil
 	return nil
-}
-
-//Mkdir makes a directory on the worker.
-//If mkparent is true, it will create parent directories.
-func (w *Worker) Mkdir(path string, mkparent bool) (err error) {
-	//calculate post URL
-	u, err := w.u.Parse("/mkdir")
-	if err != nil {
-		return
-	}
-
-	//prepare request
-	rdat, err := (&internal.Request{
-		APIVersion: internal.APIVersion,
-		Request: internal.MkdirRequest{
-			Dir:    path,
-			Parent: mkparent,
-		},
-	}).Sign(w.authkey)
-	if err != nil {
-		return
-	}
-
-	//send post request
-	resp, err := w.hcl.PostForm(u.String(), url.Values{
-		"request": []string{string(rdat)},
-	})
-	if err != nil {
-		return
-	}
-
-	//discard response
-	defer func() {
-		cerr := resp.Body.Close()
-		if cerr != nil && err == nil {
-			err = cerr
-		}
-	}()
-	_, err = io.Copy(ioutil.Discard, resp.Body)
-	return
 }
