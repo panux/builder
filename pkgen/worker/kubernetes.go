@@ -7,8 +7,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/panux/builder/pkgen"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -112,4 +114,85 @@ func (wp *workerPod) Close() error {
 		}
 	}
 	return nil
+}
+
+func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
+	var img string
+	vols := []v1.Volume{
+		v1.Volume{
+			Name: "srvkey",
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: wp.sslsecret.Name,
+					Items: []v1.KeyToPath{
+						v1.KeyToPath{
+							Key:  "srvkey",
+							Path: "srvkey.pem",
+						},
+						v1.KeyToPath{
+							Key:  "cert",
+							Path: "cert.pem",
+						},
+						v1.KeyToPath{
+							Key:  "auth",
+							Path: "auth.pem",
+						},
+					},
+				},
+			},
+		},
+	}
+	vmounts := []v1.VolumeMount{
+		v1.VolumeMount{
+			Name:      "srvkey",
+			ReadOnly:  true,
+			MountPath: "/srv/secret/",
+		},
+	}
+	switch pk.Builder {
+	case "bootstrap":
+		img = "panux/worker:alpine"
+	case "docker":
+		hpt := v1.HostPathSocket
+		vols = append(vols, v1.Volume{
+			Name: "dockersock",
+			VolumeSource: v1.VolumeSource{
+				HostPath: &v1.HostPathVolumeSource{
+					Path: "/var/run/docker.sock",
+					Type: &hpt,
+				},
+			},
+		})
+		vmounts = append(vmounts, v1.VolumeMount{
+			Name:      "dockersock",
+			ReadOnly:  false,
+			MountPath: "/var/run/docker.sock",
+		})
+		fallthrough
+	case "default":
+		img = "panux/worker"
+	default:
+		return nil, fmt.Errorf("unrecognized builder: %q", pk.Builder)
+	}
+	pod := &v1.Pod{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				v1.Container{
+					Name:            "worker",
+					Image:           img,
+					ImagePullPolicy: v1.PullAlways,
+					VolumeMounts:    vmounts,
+					ReadinessProbe: &v1.Probe{
+						Handler: v1.Handler{
+							TCPSocket: &v1.TCPSocketAction{
+								Port: intstr.FromInt(20),
+							},
+						},
+					},
+				},
+			},
+			Volumes: vols,
+		},
+	}
+	return pod, nil
 }
