@@ -12,9 +12,12 @@ RUN ["busybox","sh","-c","echo hello"]
 
 FROM golang:alpine as workerbuilder
 WORKDIR /root
-RUN apk --no-cache add make git gcc libc-dev && go get -v golang.org/x/crypto/ssh
-COPY cmd/worker/worker.go worker.go
-RUN go build -o worker --ldflags '-linkmode external -extldflags "-static"'
+RUN apk --no-cache add make git gcc libc-dev
+COPY cmd/worker/worker.go /go/src/github.com/panux/builder/cmd/worker/worker.go
+COPY pkgen /go/src/github.com/panux/builder/pkgen
+COPY internal /go/src/github.com/panux/builder/internal
+RUN (cd /go/src/github.com/panux/builder/cmd/worker && go get ./...) && \
+    go build -o worker --ldflags '-linkmode external -extldflags "-static"' github.com/panux/builder/cmd/worker
 
 FROM scratch
 COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox

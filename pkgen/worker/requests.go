@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/gorilla/websocket"
-	"github.com/panux/builder/pkgen/worker/internal"
+	"github.com/panux/builder/internal"
 )
 
 //Mkdir makes a directory on the worker.

@@ -1,10 +1,12 @@
 package worker
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"sync"
 )
 
 //LogStream is a stream which log lines can be tagged with
@@ -15,8 +17,10 @@ const (
 	StreamStdout LogStream = 1
 	//StreamStderr is a LogStream for stderr
 	StreamStderr LogStream = 2
-	//StreamMeta is a LogStream for the server executing the command/build
-	StreamMeta LogStream = 3
+	//StreamBuild is a LogStream for info from the build system
+	StreamBuild LogStream = 3
+	//StreamMeta is a LogStream for metadata
+	StreamMeta LogStream = 4
 )
 
 func (l LogStream) String() string {
@@ -25,6 +29,8 @@ func (l LogStream) String() string {
 		return "stdout"
 	case StreamStderr:
 		return "stderr"
+	case StreamBuild:
+		return "build"
 	case StreamMeta:
 		return "meta"
 	default:
@@ -71,3 +77,76 @@ func StdLogHandler(l *log.Logger) LogHandler {
 //DefaultLogHandler is the default LogHandler.
 //It logs to stderr.
 var DefaultLogHandler = StdLogHandler(log.New(os.Stderr, "", log.LstdFlags))
+
+//NewLogWriter returns an io.WriteCloser that is logged.
+//The LogHandler must be mutexed if it is also used by anything else.
+//Spawns a goroutine.
+func NewLogWriter(lh LogHandler, stream LogStream) io.WriteCloser {
+	piper, pipew := io.Pipe()
+	go ReadLog(lh, stream, piper)
+	return pipew
+}
+
+//ReadLog reads a log from a reader.
+//The log is put to the LogHandler on LogStream stream.
+func ReadLog(lh LogHandler, stream LogStream, r io.Reader) error {
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		lh.Log(LogLine{
+			Text:   s.Text(),
+			Stream: stream,
+		})
+	}
+	err := s.Err()
+	if err != io.EOF {
+		return err
+	}
+	return nil
+}
+
+type mutexedLogHandler struct {
+	lck sync.Mutex
+	lh  LogHandler
+}
+
+func (mlh *mutexedLogHandler) Log(ll LogLine) error {
+	mlh.lck.Lock()
+	defer mlh.lck.Unlock()
+	return mlh.lh.Log(ll)
+}
+
+func (mlh *mutexedLogHandler) Close() error {
+	mlh.lck.Lock()
+	defer mlh.lck.Unlock()
+	return mlh.lh.Close()
+}
+
+//NewMutexedLogHandler returns a LogHandler which is thread-safe.
+func NewMutexedLogHandler(handler LogHandler) LogHandler {
+	return &mutexedLogHandler{lh: handler}
+}
+
+type metaInterceptor struct {
+	cb func(string)
+	lh LogHandler
+}
+
+func (mi *metaInterceptor) Log(ll LogLine) error {
+	if ll.Stream == StreamMeta {
+		mi.cb(ll.Text)
+		return nil
+	}
+	return mi.lh.Log(ll)
+}
+
+func (mi *metaInterceptor) Close() error {
+	return mi.lh.Close()
+}
+
+//InterceptMeta returrns a LogHandler which executes a callback instead of logging messages in StreamMeta.
+func InterceptMeta(lh LogHandler, callback func(string)) LogHandler {
+	return &metaInterceptor{
+		cb: callback,
+		lh: lh,
+	}
+}
