@@ -1,17 +1,23 @@
 package worker
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"io"
 	"log"
 	"math/big"
+	"net/http"
+	"net/url"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/panux/builder/pkgen"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -48,6 +54,10 @@ func (s *Starter) Start(pk *pkgen.PackageGenerator) (w *Worker, err error) {
 		return nil, err
 	}
 	cert, err := x509.CreateCertificate(rand.Reader, ctmpl, ctmpl, privkey.Public(), privkey) //create cert with template and key
+	if err != nil {
+		return nil, err
+	}
+	ctmpl, err = x509.ParseCertificate(cert)
 	if err != nil {
 		return nil, err
 	}
@@ -93,9 +103,48 @@ func (s *Starter) Start(pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	}
 	wpod.pod = pod
 
-	//TODO: generate tls config and prepare client
+	//generate tls config
+	tlsc := new(tls.Config)
+	tlsc.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+		for _, c := range rawCerts {
+			ce, err := x509.ParseCertificate(c)
+			if err != nil {
+				return err
+			}
+			if bytes.Equal(ce.Signature, ctmpl.Signature) {
+				return nil
+			}
+		}
+		return errors.New("bad cert")
+	}
 
-	return nil, nil
+	//wait for pod to start up
+	err = wpod.waitStart()
+	if err != nil {
+		return
+	}
+
+	//prepare clients
+	hcl := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsc,
+		},
+	}
+	wscl := &websocket.Dialer{
+		TLSClientConfig: tlsc,
+	}
+
+	//build and return Worker
+	return &Worker{
+		u: &url.URL{
+			Scheme: "https",
+			Host:   wpod.pod.Status.PodIP,
+		},
+		hcl:     hcl,
+		wscl:    wscl,
+		authkey: authkey,
+		pod:     wpod,
+	}, nil
 }
 
 func genCertTmpl() (*x509.Certificate, error) {
