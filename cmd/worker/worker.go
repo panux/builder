@@ -207,6 +207,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lh := worker.NewMutexedLogHandler(&wsLogHandler{c: c})
+	defer lh.Close()
 	if cmdr.EnableStdin {
 		cmd.Stdin = internal.NewWebsocketReader(c)
 	}
