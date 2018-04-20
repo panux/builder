@@ -192,6 +192,9 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 				},
 			},
 			Volumes: vols,
+			NodeSelector: map[string]string{
+				"beta.kubernetes.io/arch": pk.HostArch.GoArch(),
+			},
 		},
 	}
 	return pod, nil

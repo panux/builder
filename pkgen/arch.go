@@ -44,6 +44,18 @@ func (a Arch) AutoTools() string {
 	}
 }
 
+//GoArch returns the name of an arch used by Go/Kubernetes
+func (a Arch) GoArch() string {
+	switch a {
+	case Archx86:
+		return "386"
+	case Archx86_64:
+		return "amd64"
+	default:
+		return a.String()
+	}
+}
+
 var a86run = []Arch{Archx86, Archx86_64}
 
 //RunsOn returns what Arch's code from this arch will run on
