@@ -2,6 +2,7 @@ package worker
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -172,11 +173,32 @@ func (c CmdOptions) defaults() CmdOptions {
 	return c
 }
 
+//ErrCmdFail is an error indicating that a command failed
+var ErrCmdFail = errors.New("command did not report success")
+
 //RunCmd runs a command on the worker.
 //If stdin is not set then stdin will not be connected.
 func (w *Worker) RunCmd(argv []string, stdin io.Reader, opts CmdOptions) (err error) {
 	//fill in blanks with defaults
 	opts = opts.defaults()
+
+	//check for success message
+	var success bool
+	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
+		if s == "success" {
+			success = true
+		} else { //forward error to stderr
+			opts.LogOut.Log(buildlog.Line{
+				Text:   s,
+				Stream: buildlog.StreamStderr,
+			})
+		}
+	})
+	defer func() {
+		if err == nil && !success {
+			err = ErrCmdFail
+		}
+	}()
 
 	//calculate target URL
 	u, err := w.u.Parse("/run")
