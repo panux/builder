@@ -29,6 +29,15 @@ type Starter struct {
 	namespace string                //kubernetes namespace to start pods in
 }
 
+//NewStarter returns a Starter with the given kubernetes clientset.
+//All secrets/pods are created in the specified namespace.
+func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
+	return &Starter{
+		kcl:       kcl,
+		namespace: namespace,
+	}
+}
+
 //Start starts a new worker using kubernetes
 func (s *Starter) Start(pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	//create worker pod struct
