@@ -35,6 +35,12 @@ func main() {
 	flag.StringVar(&addr, "https", ":443", "https server port")
 	flag.Parse()
 
+	//http setup
+	http.HandleFunc("/mkdir", handleMkdir)
+	http.HandleFunc("/write", handleWriteFile)
+	http.HandleFunc("/read", handleReadFile)
+	http.HandleFunc("/run", handleRunCmd)
+
 	//run http server
 	log.Fatalf("Failed to listen: %q\n", http.ListenAndServeTLS(addr, tlskeypath, tlscertpath, nil))
 }
