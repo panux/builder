@@ -18,7 +18,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/panux/builder/internal"
-	"github.com/panux/builder/pkgen/worker"
+	"github.com/panux/builder/pkgen/buildlog"
 )
 
 var authk []byte //authentication public key
@@ -206,18 +206,18 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		cmd.Env = env
 	}
 
-	lh := worker.NewMutexedLogHandler(&wsLogHandler{c: c})
+	lh := buildlog.NewMutexedLogHandler(&wsLogHandler{c: c})
 	defer lh.Close()
 	if cmdr.EnableStdin {
 		cmd.Stdin = internal.NewWebsocketReader(c)
 	}
 	if !cmdr.DisableStdout {
-		w := worker.NewLogWriter(lh, worker.StreamStdout)
+		w := buildlog.NewLogWriter(lh, buildlog.StreamStdout)
 		defer w.Close()
 		cmd.Stdout = w
 	}
 	if !cmdr.DisableStderr {
-		w := worker.NewLogWriter(lh, worker.StreamStderr)
+		w := buildlog.NewLogWriter(lh, buildlog.StreamStderr)
 		defer w.Close()
 		cmd.Stderr = w
 	}
@@ -225,14 +225,14 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	err = cmd.Run()
 
 	if err != nil {
-		lh.Log(worker.LogLine{
+		lh.Log(buildlog.Line{
 			Text:   fmt.Sprintf("error: %q", err.Error()),
-			Stream: worker.StreamMeta,
+			Stream: buildlog.StreamMeta,
 		})
 	} else {
-		lh.Log(worker.LogLine{
+		lh.Log(buildlog.Line{
 			Text:   "success",
-			Stream: worker.StreamMeta,
+			Stream: buildlog.StreamMeta,
 		})
 	}
 }
@@ -241,7 +241,7 @@ type wsLogHandler struct {
 	c *websocket.Conn
 }
 
-func (wsl *wsLogHandler) Log(ll worker.LogLine) error {
+func (wsl *wsLogHandler) Log(ll buildlog.Line) error {
 	return wsl.c.WriteJSON(ll)
 }
 

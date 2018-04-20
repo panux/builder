@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/panux/builder/internal"
+	"github.com/panux/builder/pkgen/buildlog"
 )
 
 //Mkdir makes a directory on the worker.
@@ -160,13 +161,13 @@ type CmdOptions struct {
 
 	//LogOut is the LogHandler used for output.
 	//Defaults to DefaultLogHandler.
-	LogOut LogHandler
+	LogOut buildlog.Handler
 }
 
 //set defaults where missing
 func (c CmdOptions) defaults() CmdOptions {
 	if c.LogOut == nil {
-		c.LogOut = DefaultLogHandler
+		c.LogOut = buildlog.DefaultHandler
 	}
 	return c
 }
@@ -238,7 +239,7 @@ func (w *Worker) RunCmd(argv []string, stdin io.Reader, opts CmdOptions) (err er
 		case websocket.CloseMessage:
 			return nil
 		case websocket.BinaryMessage:
-			var ll LogLine
+			var ll buildlog.Line
 			err = json.Unmarshal(dat, &ll)
 			if err != nil {
 				return err
