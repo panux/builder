@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/panux/builder/internal"
 	"github.com/panux/builder/pkgen"
 	"github.com/panux/builder/pkgen/buildlog"
+	"github.com/panux/builder/pkgen/dlapi"
 	"github.com/panux/builder/pkgen/worker"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -30,9 +32,11 @@ func main() {
 	var addr string
 	var namespace string
 	var authkeys string
+	var dlserver string
 	flag.StringVar(&addr, "http", ":80", "http listen address")
 	flag.StringVar(&namespace, "namespace", "default", "Kubernetes namespace to run workers in")
 	flag.StringVar(&authkeys, "auth", "/srv/authkeys.json", "JSON file containing authorized RSA auth keys")
+	flag.StringVar(&dlserver, "dlserver", "http://dlserver/", "address of download server")
 
 	//Prep Kubernetes client
 	config, err := rest.InClusterConfig()
@@ -49,6 +53,13 @@ func main() {
 
 	//Load auth list
 	loadAuthKeys(authkeys)
+
+	//Prep loader
+	dlurl, err := url.Parse(dlserver)
+	if err != nil {
+		log.Fatalf("Failed to parse dlserver URL: %q\n", err.Error())
+	}
+	loader = dlapi.NewDlClient(dlurl, nil)
 
 	//http
 	http.HandleFunc("/build", handleBuild)
