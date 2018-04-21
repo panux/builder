@@ -37,6 +37,7 @@ func main() {
 	flag.StringVar(&namespace, "namespace", "default", "Kubernetes namespace to run workers in")
 	flag.StringVar(&authkeys, "auth", "/srv/authkeys.json", "JSON file containing authorized RSA auth keys")
 	flag.StringVar(&dlserver, "dlserver", "http://dlserver/", "address of download server")
+	flag.Parse()
 
 	//Prep Kubernetes client
 	config, err := rest.InClusterConfig()
