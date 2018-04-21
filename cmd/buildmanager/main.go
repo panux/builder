@@ -6,11 +6,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/panux/builder/internal"
 	"github.com/panux/builder/pkgen"
 	"github.com/panux/builder/pkgen/buildlog"
-	"github.com/panux/builder/pkgen/dlapi"
 	"github.com/panux/builder/pkgen/worker"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -26,17 +23,14 @@ import (
 
 var starter *worker.Starter
 var auth [][]byte
-var loader pkgen.Loader
 
 func main() {
 	var addr string
 	var namespace string
 	var authkeys string
-	var dlserver string
 	flag.StringVar(&addr, "http", ":80", "http listen address")
 	flag.StringVar(&namespace, "namespace", "default", "Kubernetes namespace to run workers in")
 	flag.StringVar(&authkeys, "auth", "/srv/authkeys.json", "JSON file containing authorized RSA auth keys")
-	flag.StringVar(&dlserver, "dlserver", "http://dlserver/", "address of download server")
 	flag.Parse()
 
 	//Prep Kubernetes client
@@ -54,13 +48,6 @@ func main() {
 
 	//Load auth list
 	loadAuthKeys(authkeys)
-
-	//Prep loader
-	dlurl, err := url.Parse(dlserver)
-	if err != nil {
-		log.Fatalf("Failed to parse dlserver URL: %q\n", err.Error())
-	}
-	loader = dlapi.NewDlClient(dlurl, nil)
 
 	//http
 	http.HandleFunc("/build", handleBuild)
@@ -167,7 +154,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send source tarball
-	err = writeSourceTar(br.Pkgen, work)
+	err = writeSourceTar(br.Pkgen, work, c)
 	if err != nil {
 		l.Log(buildlog.Line{
 			Text:   fmt.Sprintf("source tar generation failed: %q", err.Error()),
@@ -229,13 +216,12 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func writeSourceTar(pk *pkgen.PackageGenerator, work *worker.Worker) error {
-	piper, pipew := io.Pipe()
-	go func() { //write source tar on a seperate goroutine
-		pipew.CloseWithError(pk.WriteSourceTar(pipew, loader, 100*1024*1024))
-	}()
-	defer piper.Close() //insurance that the background goroutine wont survive
-	return work.WriteFile("/root/build/src.tar", piper)
+func writeSourceTar(pk *pkgen.PackageGenerator, work *worker.Worker, c *websocket.Conn) error {
+	_, r, err := c.NextReader()
+	if err != nil {
+		return err
+	}
+	return work.WriteFile("/root/build/src.tar", r)
 }
 
 func writeMakefile(pk *pkgen.PackageGenerator, work *worker.Worker) error {

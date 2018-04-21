@@ -78,6 +78,12 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	//start processing output in background
 	donech := make(chan error)
 	go procWsRead(c, opts, donech)
+	defer func() {
+		re := <-donech
+		if re != nil && err == nil {
+			err = re
+		}
+	}()
 
 	//send request
 	err = wsSendRequest(c, rdat)
@@ -93,8 +99,13 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		}
 	}
 
-	//wait for reads to finish
-	return <-donech
+	//send souce tar
+	err = wsSendSources(c, bjr)
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 func wsSendRequest(c *websocket.Conn, r []byte) (err error) {
@@ -175,5 +186,20 @@ func wsSendPackages(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 		}
 	}()
 	err = bjr.tar(w)
+	return
+}
+
+func wsSendSources(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
+	w, err := c.NextWriter(websocket.BinaryMessage)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cerr := w.Close()
+		if cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+	err = bjr.writeSourceTar(w)
 	return
 }
