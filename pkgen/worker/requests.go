@@ -182,6 +182,9 @@ func (w *Worker) RunCmd(argv []string, stdin io.Reader, opts CmdOptions) (err er
 	//fill in blanks with defaults
 	opts = opts.defaults()
 
+	//enforce thread safety
+	opts.LogOut = buildlog.NewMutexedLogHandler(opts.LogOut)
+
 	//check for success message
 	var success bool
 	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {

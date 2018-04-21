@@ -156,6 +156,15 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 	for _, l := range pg.Script {
 		sr.NewCmd(l)
 	}
+	//add pkgs.tar rule
+	b.NewRule(makefile.FilePath("pkgs.tar")).
+		AddDep(makefile.RawText("gentars")).
+		NewCmd("tar").
+		AddArg(makefile.RawText("-cf")).
+		AddArg(makefile.RawText("pkgs.tar")).
+		AddArg(makefile.RawText("-C")).
+		AddArg(mv.TarOut.Sub()).
+		AddArg(makefile.RawText("."))
 }
 
 //GenFullMakefile creates an entire Makefile
