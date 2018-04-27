@@ -3,14 +3,15 @@ package pkgen
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 )
 
 //ArchSet is a set of supported Arch's
-type ArchSet []string
+type ArchSet []Arch
 
 //Supports checks if the ArchSet supports arch
-func (a ArchSet) Supports(arch string) bool {
+func (a ArchSet) Supports(arch Arch) bool {
 	if len(a) == 1 && a[0] == arch {
 		return true
 	}
@@ -31,6 +32,9 @@ func (a Arch) String() string {
 
 //Convert implements the makefile.Text interface
 func (a Arch) Convert() string {
+	if !a.Supported() {
+		panic(fmt.Errorf("invalid arch %s", a.String()))
+	}
 	return a.String()
 }
 
@@ -100,3 +104,6 @@ func GetHostArch() (Arch, error) {
 		return "", ErrUnsupportedArch
 	}
 }
+
+//SupportedArch is the set of supported Arch
+var SupportedArch = ArchSet{"x86_64", "x86"}

@@ -9,7 +9,7 @@ import (
 //RawPackageGenerator is the package generator in raw form (after YAML unmarshalling)
 type RawPackageGenerator struct {
 	Packages          map[string]Package     //list of packages generated
-	Arch              ArchSet                //supported architectures (any means not sys-dependent, all means it will run on all)
+	Arch              ArchSet                //supported architectures (works on all if nil)
 	Version           string                 //version of package
 	Build             uint                   //build number (added to end of version)
 	Sources           []string               //list of source URLs (raw)

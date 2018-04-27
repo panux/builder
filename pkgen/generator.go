@@ -8,8 +8,6 @@ import (
 	"sort"
 	"strings"
 	"text/template"
-
-	"github.com/blang/semver"
 )
 
 //PackageGenerator is the preprocessed pkgen
@@ -39,11 +37,7 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch) (*Pack
 	pg.Arch = rpg.Arch
 	pg.HostArch = hostarch
 	pg.BuildArch = buildarch
-	ver, err := semver.ParseTolerant(rpg.Version)
-	if err != nil {
-		return nil, err
-	}
-	pg.Version = fmt.Sprintf("%s-%d", ver.String(), rpg.Build)
+	pg.Version = fmt.Sprintf("%s-%d", rpg.Version, rpg.Build)
 	pg.Sources = make([]*url.URL, len(rpg.Sources))
 	for i, v := range rpg.Sources {
 		vpp, err := rpg.tmpl(fmt.Sprintf("src-%d", i), v, buildarch, hostarch)
@@ -67,6 +61,8 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch) (*Pack
 		case "bootstrap":
 		case "docker":
 		case "default":
+		case "panux":
+			rpg.Builder = "default"
 		default:
 			return nil, fmt.Errorf("pkgen: invalid builder %q", rpg.Builder)
 		}
