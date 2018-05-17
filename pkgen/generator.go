@@ -25,7 +25,7 @@ type PackageGenerator struct {
 }
 
 //Preprocess preprocesses a RawPackageGenerator into a PackageGenerator
-func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch) (*PackageGenerator, error) {
+func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch, bootstrap bool) (*PackageGenerator, error) {
 	pg := new(PackageGenerator)
 	pg.Packages = make(map[string]Package)
 	for n, p := range rpg.Packages {
@@ -59,6 +59,9 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch) (*Pack
 	if rpg.Builder != "" {
 		switch rpg.Builder {
 		case "bootstrap":
+			if !bootstrap {
+				rpg.Builder = "default"
+			}
 		case "docker":
 		case "default":
 		case "panux":
