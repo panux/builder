@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -194,4 +195,87 @@ func (ls *LogSession) distributor() {
 		//save log to disk
 		ls.err = ls.store.Save(ls.bi, log)
 	}()
+}
+
+// Wait waits for the LogSession to close
+func (ls *LogSession) Wait() {
+	ls.wg.Wait()
+}
+
+type logSessionLogHandler struct {
+	ch chan<- buildlog.Line
+	ls *LogSession
+	lm *LogManager
+}
+
+func (lslh *logSessionLogHandler) Log(l buildlog.Line) error {
+	lslh.ch <- l
+	return nil
+}
+
+func (lslh *logSessionLogHandler) Close() error {
+	// close input channel
+	close(lslh.ch)
+
+	//deregister session
+	lslh.lm.lck.Lock()
+	defer lslh.lm.lck.Unlock()
+	delete(lslh.lm.buildlookup, lslh.ls.bi.Hash)
+
+	//wait for session shutdown
+	lslh.ls.Wait()
+	return lslh.ls.err
+}
+
+// LogManager manages logs
+type LogManager struct {
+	lck         sync.Mutex
+	store       *LogStore
+	buildlookup map[[sha256.Size]byte]*LogSession
+}
+
+// Stream attempts to acquire a log stream
+func (lm *LogManager) Stream(bi buildmanager.BuildInfo) (LogStream, error) {
+	//do locking
+	lm.lck.Lock()
+	defer lm.lck.Unlock()
+
+	//look for a session
+	sess := lm.buildlookup[bi.Hash]
+	if sess != nil {
+		ls, err := sess.Stream()
+		if err != ErrSessionClosed {
+			return ls, err
+		}
+		delete(lm.buildlookup, bi.Hash)
+	}
+
+	//pull off of disk
+	return lm.store.Stream(bi)
+}
+
+// Log implements buildmanager.LogProvider
+func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
+	lm.lck.Lock()
+	defer lm.lck.Unlock()
+
+	// create session-handler pair
+	lch := make(chan buildlog.Line)
+	ls := &LogSession{
+		in:    lch,
+		store: lm.store,
+		bi:    bi,
+	}
+	lh := &logSessionLogHandler{
+		ch: lch,
+		ls: ls,
+	}
+
+	//start distributor
+	ls.distributor()
+
+	//store session into manager
+	lm.buildlookup[bi.Hash] = ls
+
+	return lh, nil
 }
