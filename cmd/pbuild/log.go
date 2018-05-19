@@ -2,14 +2,17 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/jadr2ddude/sse"
 	"github.com/panux/builder/pkgen/buildlog"
 	"github.com/panux/builder/pkgen/buildmanager"
 )
@@ -278,4 +281,80 @@ func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
 	lm.buildlookup[bi.Hash] = ls
 
 	return lh, nil
+}
+
+// ServeHTTP implements http.Handler on the LogManager
+// The request takes the following query:
+//		buildhash: the hexidecimal sha256 hash of the build
+// The request responds with HTML5 SSE with the following message types:
+//		start: indicates that event streaming has started (also sent on reconnect - starts from beginning)
+//		log: contains a buildlog.Line in data
+//		terminate: contains an error causing termination; EOF means that it finished streaming the log
+func (lm *LogManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	//decode request
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to parse form: %q", err.Error()), http.StatusBadRequest)
+		return
+	}
+	hash, err := hex.DecodeString(r.FormValue("buildhash"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to decode build hash: %q", err.Error()), http.StatusBadRequest)
+		return
+	}
+	if len(hash) != sha256.Size {
+		http.Error(w, fmt.Sprintf("Hash is %d bytes; expected %d bytes.", len(hash), sha256.Size), http.StatusBadRequest)
+		return
+	}
+	var bi buildmanager.BuildInfo
+	copy(bi.Hash[:], hash)
+
+	//request LogStream
+	ls, err := lm.Stream(bi)
+	if os.IsNotExist(err) {
+		http.Error(w, "Build not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to acquire log stream: %q", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	defer ls.Close()
+
+	//start HTML5 Server Sent Events
+	evs, err := sse.NewSender(w)
+	if err != nil {
+		return
+	}
+
+	//send log as events
+	for {
+		//get next log line
+		l, err := ls.NextLine()
+
+		//send termination
+		if err != nil {
+			//notify client of error
+			evs.SendEvent(sse.Event{
+				Name: "terminate",
+				Data: err.Error(),
+			})
+
+			//disconnect
+			return
+		}
+
+		//encode log line to JSON
+		dat, _ := json.Marshal(l)
+
+		//send line
+		err = evs.SendEvent(sse.Event{
+			Name: "log",
+			Data: string(dat),
+		})
+		if err != nil {
+			//connection error
+			return
+		}
+	}
 }
