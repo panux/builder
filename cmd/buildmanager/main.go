@@ -192,7 +192,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = work.ReadFile("/root/build/pkgs.tar", pw)
-	pw.Close()
+	cerr := pw.Close()
+	if cerr != nil && err == nil {
+		err = cerr
+	}
 	if err != nil {
 		log.Printf("Oh shoot, failed to send packages back: %q\n", err.Error())
 		l.Log(buildlog.Line{
