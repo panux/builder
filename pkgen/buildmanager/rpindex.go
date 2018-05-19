@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/panux/builder/pkgen"
+	"golang.org/x/tools/godoc/vfs"
 )
 
 //ErrPkgNotFound is an error type indicating that the specified package was not found
@@ -40,6 +42,31 @@ func (rpi RawPackageIndex) DepWalker() DepWalker {
 	}
 }
 
+// List gets a list of packages
+func (rpi RawPackageIndex) List() []string {
+	//get name list
+	names := make([]string, len(rpi))
+	i := 0
+	for _, v := range rpi {
+		names[i] = filepath.Base(filepath.Dir(v.Path))
+		i++
+	}
+
+	//sort name list
+	sort.Strings(names)
+
+	//dedup name list
+	for i = 1; i < len(names); {
+		if names[i] == names[i-1] {
+			names = names[:i+copy(names[i:], names[i+1:])]
+		} else {
+			i++
+		}
+	}
+
+	return names
+}
+
 //turn an array of RawPkent into a RawPackageIndex
 func indexEnts(ents []*RawPkent) RawPackageIndex {
 	rpi := make(RawPackageIndex)
@@ -51,7 +78,7 @@ func indexEnts(ents []*RawPkent) RawPackageIndex {
 	return rpi
 }
 
-func loadEnt(path string) (ent *RawPkent, err error) {
+func loadEnt(fs vfs.FileSystem, path string) (ent *RawPkent, err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return
@@ -72,33 +99,40 @@ func loadEnt(path string) (ent *RawPkent, err error) {
 	}, nil
 }
 
-//FindPkgens finds all pkgens in a directory
-func FindPkgens(dir string) ([]string, error) {
-	pkgens := []string{}
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-		if filepath.Ext(path) == ".yaml" {
-			pkgens = append(pkgens, path)
-		}
-		return nil
-	})
+//FindPkgens finds all pkgens in a vfs
+func FindPkgens(dir vfs.FileSystem) ([]string, error) {
+	return findPkgenV(dir, "/")
+}
+
+func findPkgenV(fs vfs.FileSystem, dir string) ([]string, error) {
+	files, err := fs.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	return pkgens, nil
+	pks := []string{}
+	for _, f := range files {
+		if f.IsDir() {
+			subpks, err := findPkgenV(fs, filepath.Join(dir, f.Name()))
+			if err != nil {
+				return nil, err
+			}
+			pks = append(pks, subpks...)
+		} else if filepath.Base(f.Name()) == "pkgen.yaml" {
+			pks = append(pks, f.Name())
+		}
+	}
+	return pks, nil
 }
 
 //IndexDir finds all pkgens in a dir and uses them to make a RawPackageIndex
-func IndexDir(dir string) (RawPackageIndex, error) {
+func IndexDir(dir vfs.FileSystem) (RawPackageIndex, error) {
 	pkgens, err := FindPkgens(dir)
 	if err != nil {
 		return nil, err
 	}
 	ents := make([]*RawPkent, len(pkgens))
 	for i, v := range pkgens {
-		ent, err := loadEnt(v)
+		ent, err := loadEnt(dir, v)
 		if err != nil {
 			return nil, err
 		}

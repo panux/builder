@@ -8,19 +8,17 @@ import (
 	"github.com/panux/builder/pkgen"
 )
 
-//PackageGetter is a function type called to get a package
-type PackageGetter func(path string) (len uint32, r io.ReadCloser, ext string, err error)
-
 //BuildJobRequest is a thing
 type BuildJobRequest struct {
-	pk      *pkgen.PackageGenerator
-	bdeps   []string
-	pgetter PackageGetter
-	loader  pkgen.Loader
+	pk           *pkgen.PackageGenerator
+	bdeps        []string
+	pgetter      PackageRetriever
+	loader       pkgen.Loader
+	bootstrapped bool
 }
 
 //CreateBuildJobRequest creates a new BuildJobRequest
-func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget PackageGetter, loader pkgen.Loader) (*BuildJobRequest, error) {
+func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget PackageRetriever, loader pkgen.Loader) (*BuildJobRequest, error) {
 	var bdeps []string
 	var err error
 	if pk.Builder != "bootstrap" {
@@ -28,6 +26,8 @@ func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget Packag
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		bdeps = []string{}
 	}
 	return &BuildJobRequest{
 		pk:      pk,
@@ -49,7 +49,7 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 		var l uint32
 		var r io.ReadCloser
 		var ext string
-		l, r, ext, err = bjr.pgetter(d)
+		l, r, ext, err = bjr.pgetter.GetPkg(d, bjr.pk.HostArch, bjr.bootstrapped)
 		if err != nil {
 			return
 		}

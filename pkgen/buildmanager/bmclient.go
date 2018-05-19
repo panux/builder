@@ -4,10 +4,12 @@ package buildmanager
 
 import (
 	"bufio"
+	"context"
 	"crypto/rsa"
 	"encoding/json"
 	"io"
 	"net/url"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/panux/builder/internal"
@@ -40,8 +42,13 @@ type BuildOptions struct {
 	//Required.
 	Out func(name string, r io.Reader) error
 
-	//LogOut is the buildlog.Handler used for log output
+	//LogOut is the buildlog.Handler used for log output.
+	//Not closed on completion.
 	LogOut buildlog.Handler
+
+	//Context is a contest for cancellation.
+	//Optional. Defaults to context.Background.
+	Context context.Context
 }
 
 //Build builds a package
@@ -75,15 +82,40 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		}
 	}()
 
-	//start processing output in background
-	donech := make(chan error)
-	go procWsRead(c, opts, donech)
+	//handle errors from goroutines
+	var cancelled bool
+	var procreaderr error
 	defer func() {
-		re := <-donech
-		if re != nil && err == nil {
-			err = re
+		if cancelled {
+			err = context.Canceled
+		}
+		if procreaderr != nil && err != nil {
+			err = procreaderr
 		}
 	}()
+	//do WaitGroup
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	//setup context
+	ctx := opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	//handle cancellation
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		c.Close() //close to cancel I/O
+		cancelled = true
+	}()
+
+	//start processing output in background
+	wg.Add(1)
+	go procWsRead(c, opts, &wg, &procreaderr)
 
 	//send request
 	err = wsSendRequest(c, rdat)
@@ -123,11 +155,11 @@ func wsSendRequest(c *websocket.Conn, r []byte) (err error) {
 	return
 }
 
-func procWsRead(c *websocket.Conn, opts BuildOptions, donech chan<- error) {
+func procWsRead(c *websocket.Conn, opts BuildOptions, wg *sync.WaitGroup, e *error) {
+	defer wg.Done()
 	var err error
 	defer func() {
-		donech <- err
-		close(donech)
+		*e = err
 	}()
 	for {
 		err = wsDoRead(c, opts)
