@@ -3,7 +3,7 @@
 package buildmanager
 
 import (
-	"bufio"
+	"archive/tar"
 	"context"
 	"crypto/rsa"
 	"encoding/json"
@@ -180,14 +180,14 @@ func wsDoRead(c *websocket.Conn, opts BuildOptions) error {
 	}
 	switch mt {
 	case websocket.BinaryMessage:
-		br := bufio.NewReader(r)
-		name, err := br.ReadString(0)
-		if err != nil {
-			return err
-		}
-		err = opts.Out(name, br)
-		if err != nil {
-			return err
+		tr := tar.NewReader(r)
+		for {
+			h, err := tr.Next()
+			if err != nil {
+				return err
+			}
+			fi := h.FileInfo()
+			opts.Out(fi.Name(), io.LimitReader(tr, fi.Size()))
 		}
 	case websocket.TextMessage:
 		var line buildlog.Line
