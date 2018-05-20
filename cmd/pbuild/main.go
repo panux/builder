@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -115,6 +116,13 @@ func main() {
 				if err != nil {
 					fmt.Printf("Failed to pull repo: %q\n", err.Error())
 				}
+				cmd := exec.CommandContext(srvctx, Config.AfterBuild[0], Config.AfterBuild[1:]...)
+				cmd.Stderr = os.Stderr
+				cmd.Stdout = os.Stdout
+				err = cmd.Run()
+				if err != nil {
+					fmt.Printf("Failed to run post-build command: %q\n", err.Error())
+				}
 			case <-srvstop:
 				return
 			}
@@ -198,4 +206,5 @@ var Config struct {
 	Arch            pkgen.ArchSet `json:"arch"`
 	Parallel        uint16        `json:"parallel"`
 	MaxBuf          uint          `json:"maxbuf"`
+	AfterBuild      []string      `json:"afterBuild"`
 }
