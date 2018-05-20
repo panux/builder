@@ -133,6 +133,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Handle("/api/branches/beta", branch).Methods("GET")
 	router.Handle("/api/log", logmanager)
+	router.Handle("/", http.FileServer(http.Dir(Config.Static)))
 
 	//start HTTP server
 	server := &http.Server{
