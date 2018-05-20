@@ -1,21 +1,201 @@
 package main
 
-import "github.com/panux/builder/pkgen"
+import (
+	"context"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 
-func main() {}
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	"github.com/jadr2ddude/xgraph"
+	"github.com/panux/builder/pkgen"
+	"github.com/panux/builder/pkgen/buildmanager"
+	"golang.org/x/tools/godoc/vfs"
+)
+
+func main() {
+	defer log.Println("Shutdown complete")
+
+	//load config
+	var configfile string
+	flag.StringVar(&configfile, "config", "conf.json", "JSON format config file")
+	flag.Parse()
+	loadConfig(configfile)
+
+	//set up sync.WaitGroup for shutdown
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	//Set up server-wide context with SIGTERM cancellation
+	srvctx, srvcancel := context.WithCancel(context.Background())
+	sigch := make(chan os.Signal, 1)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-sigch
+		log.Println("Initiating shutdown")
+		srvcancel()
+	}()
+	signal.Notify(sigch, syscall.SIGTERM)
+
+	//Set up logging
+	logmanager := &LogManager{
+		store: &LogStore{
+			path: Config.LogDir,
+		},
+		buildlookup: make(map[[sha256.Size]byte]*LogSession),
+	}
+
+	//Set up build manager client
+	bmcli := setupBMClient()
+
+	//Set up build cache
+	bcache := buildmanager.NewJSONDirCache(Config.CacheDir)
+
+	//Set up package storage
+	pkstore := &PackageStore{
+		dir: Config.OutputDir,
+	}
+
+	//Set up repo
+	repo, err := NewGitRepo(srvctx, Config.GitRepo, Config.GitDir)
+	if err != nil {
+		log.Fatalf("failed to git clone: %q", err.Error())
+	}
+
+	//Set up loader
+	baseloader := pkgen.NewHTTPLoader(http.DefaultClient, Config.MaxBuf)
+
+	//Set up work pool
+	workpool := xgraph.NewWorkPool(Config.Parallel)
+	defer workpool.Close()
+
+	//branch state
+	branch := &BranchStatus{BranchName: "beta"}
+
+	//do build loop
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		ticker := time.NewTicker(time.Minute * 5)
+		srvstop := srvctx.Done()
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				err := repo.WithBranch(srvctx, "beta", func(ctx context.Context, source vfs.FileSystem) error {
+					(&buildmanager.Builder{
+						LogProvider:      logmanager,
+						Client:           bmcli,
+						BuildCache:       bcache,
+						Output:           pkstore,
+						SourceTree:       source,
+						PackageRetriever: pkstore,
+						BaseLoader:       baseloader,
+						Arch:             Config.Arch,
+						WorkRunner:       workpool,
+						EventHandler:     branch,
+						InfoCallback:     branch.infoCallback,
+					}).Build(ctx, branch.ListCallback)
+					return nil
+				})
+				if err != nil {
+					fmt.Printf("Failed to pull repo: %q\n", err.Error())
+				}
+			case <-srvstop:
+				return
+			}
+		}
+	}()
+
+	//configure HTTP router
+	router := mux.NewRouter()
+	router.Handle("/api/branches/beta", branch).Methods("GET")
+	router.Handle("/api/log", logmanager)
+
+	//start HTTP server
+	server := &http.Server{
+		Addr:    Config.HTTPAddr,
+		Handler: router,
+	}
+	wg.Add(1)
+	go func() { //run server in goroutine
+		defer wg.Done()
+		log.Println("starting web server. . . ")
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Printf("Web server failed: %q\n", err.Error())
+			close(sigch) //trigger shutdown
+		}
+	}()
+	wg.Add(1)
+	go func() { //trigger http shutdown on srvctx cancel
+		defer wg.Done()
+		<-srvctx.Done()
+		err := server.Shutdown(context.Background())
+		if err != nil {
+			log.Printf("shutdown error: %q\n", err.Error())
+		}
+	}()
+
+	//wait for cancellation
+	<-srvctx.Done()
+}
+
+func loadConfig(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("failed to load config: %q", err.Error())
+	}
+	defer f.Close()
+	err = json.NewDecoder(f).Decode(&Config)
+	if err != nil {
+		log.Fatalf("failed to load config: %q", err.Error())
+	}
+}
+
+func setupBMClient() *buildmanager.Client {
+	bmurl, err := url.Parse(Config.BuildManager)
+	if err != nil {
+		log.Fatalf("failed to parse build manager URL: %q", err.Error())
+	}
+	keydat, err := ioutil.ReadFile(Config.BuildManagerKey)
+	if err != nil {
+		log.Fatalf("failed to load build manager key file: %q", err.Error())
+	}
+	pkey, err := x509.ParsePKCS1PrivateKey(keydat)
+	if err != nil {
+		log.Fatalf("failed to parse build manager key: %q", err.Error())
+	}
+	return buildmanager.NewClient(bmurl, pkey, websocket.DefaultDialer)
+}
 
 // Config is the configuration struct
 var Config struct {
-	HTTPAddr        string              `json:"http"`
-	Branches        []string            `json:"branches"`
-	Static          string              `json:"static"`
-	LogDir          string              `json:"logs"`
-	BuildManager    string              `json:"manager"`
-	BuildManagerKey string              `json:"managerKey"`
-	CacheDir        string              `json:"cache"`
-	OutputDir       string              `json:"output"`
-	GitDir          string              `json:"gitDir"`
-	GitRepo         string              `json:"gitRepo"`
-	Arch            pkgen.ArchSet       `json:"arch"`
-	Parallel        map[pkgen.Arch]uint `json:"parallel"`
+	HTTPAddr        string        `json:"http"`
+	Branches        []string      `json:"branches"`
+	Static          string        `json:"static"`
+	LogDir          string        `json:"logs"`
+	BuildManager    string        `json:"manager"`
+	BuildManagerKey string        `json:"managerKey"`
+	CacheDir        string        `json:"cache"`
+	OutputDir       string        `json:"output"`
+	GitDir          string        `json:"gitDir"`
+	GitRepo         string        `json:"gitRepo"`
+	Arch            pkgen.ArchSet `json:"arch"`
+	Parallel        uint16        `json:"parallel"`
+	MaxBuf          uint          `json:"maxbuf"`
 }

@@ -42,20 +42,34 @@ func (gr *GitRepo) clone(ctx context.Context, repo string) error {
 // Not concurrency safe.
 // Supports context cancellation.
 func (gr *GitRepo) Checkout(ctx context.Context, branch string) error {
-	cmd := exec.CommandContext(ctx, "git", "checkout", branch)
+	cmd := exec.CommandContext(ctx, "git", "-C", gr.dir, "checkout", branch)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }
 
-// WithBranch locks the git repo, checks out a branch, and executes a callback.
+// Pull runs a git pull.
+// Not concurrency safe.
+// Supports context cancellation.
+func (gr *GitRepo) Pull(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, "git", "-C", gr.dir, "pull")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
+// WithBranch locks the git repo, pulls, checks out a branch, and executes a callback.
 // Protects from concurrent checkouts.
 // The callback is called with the context and a VFS of the repo.
 func (gr *GitRepo) WithBranch(ctx context.Context, branch string, callback func(ctx context.Context, repo vfs.FileSystem) error) error {
 	gr.lck.Lock()
 	defer gr.lck.Unlock()
 
-	err := gr.Checkout(ctx, branch)
+	err := gr.Pull(ctx)
+	if err != nil {
+		return err
+	}
+	err = gr.Checkout(ctx, branch)
 	if err != nil {
 		return err
 	}

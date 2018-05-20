@@ -50,6 +50,9 @@ type Builder struct {
 
 	// EventHandler is the xgraph.EventHandler used for the build.
 	EventHandler xgraph.EventHandler
+
+	// InfoCallback is a callback run when build info is generated
+	InfoCallback func(jobName string, info BuildInfo) error
 }
 
 // genBuildJob creates a *buildJob with the given package entry, targeting the given arch.
@@ -116,7 +119,7 @@ func (b *Builder) prepRPG() error {
 // Build runs a build using the given builder.
 // Before starting the build, lcb is called with the list of targets.
 // The provided context supports cancellation.
-func (b *Builder) Build(ctx context.Context, lcb func([]string) error) error {
+func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
 	err := b.prepRPG()
 	if err != nil {
 		return err
@@ -125,7 +128,7 @@ func (b *Builder) Build(ctx context.Context, lcb func([]string) error) error {
 	if err != nil {
 		return err
 	}
-	err = lcb(lst)
+	err = listcallback(lst)
 	if err != nil {
 		return err
 	}
@@ -277,6 +280,10 @@ func (bj *buildJob) buildInfo() (BuildInfo, error) {
 
 func (bj *buildJob) ShouldRun() (bool, error) {
 	bi, err := bj.buildInfo()
+	if err != nil {
+		return false, err
+	}
+	err = bj.buider.InfoCallback(bj.Name(), bi)
 	if err != nil {
 		return false, err
 	}
