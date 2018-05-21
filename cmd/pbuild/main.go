@@ -131,7 +131,7 @@ func main() {
 
 	//configure HTTP router
 	router := mux.NewRouter()
-	router.Handle("/api/branches/beta", branch).Methods("GET")
+	router.Handle("/api/branches", branch).Methods("GET")
 	router.Handle("/api/log", logmanager)
 	router.Handle("/", http.FileServer(http.Dir(Config.Static)))
 
