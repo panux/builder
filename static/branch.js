@@ -37,7 +37,7 @@ function buildElem(buildStatus) {
 
     if(buildinfo.info) {
         li.onclick = () => {
-            pageURL.pathname = '/build.html';
+            pageURL.pathname = '/log.html';
             pageURL.searchParams.delete('branch');
             pageURL.searchParams.set('buildHash', buildStatus.info.hash);
             window.location.assign(pageURL.toString());
