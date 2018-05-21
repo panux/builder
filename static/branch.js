@@ -1,4 +1,4 @@
-// branch.js is the page management code for /branch
+// branch.js is the page management code for /branch.html
 
 // pageURL is the url of the current page
 var pageURL = new URL(window.location.href);
@@ -37,7 +37,7 @@ function buildElem(buildStatus) {
 
     if(buildinfo.info) {
         li.onclick = () => {
-            pageURL.pathname = '/build';
+            pageURL.pathname = '/build.html';
             pageURL.searchParams.delete('branch');
             pageURL.searchParams.set('buildHash', buildStatus.info.hash);
             window.location.assign(pageURL.toString());
