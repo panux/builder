@@ -1,0 +1,35 @@
+/* log.css contains formatting for /log.html */
+
+/* Overall log formatting */
+.log {
+    width: auto;
+    background-color: #333333;
+    color: white;
+    line-height: 0;
+    border-color: white;
+};
+
+/* Log line hover */
+.log-line:hover {
+    background-color: grey;
+};
+
+/* Unrecognized stream log text */
+.stream0 {
+    color: DeepPink;
+};
+
+/* stdout stream log text */
+.stream1 {
+    color: white;
+};
+
+/* stderr stream log text */
+.stream2 {
+    color: Red;
+};
+
+/* build stream log text */
+.stream0 {
+    color: Yellow;
+};

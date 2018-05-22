@@ -9,7 +9,7 @@ var hash = pageURL.searchParams.get('buildHash');
 // streamClass returns the CSS class corresponding to the line stream
 function streamClass(streamnum) {
     //handle unrecognized stream number
-    if(streamnum > 4) {
+    if(streamnum > 3) {
         streamnum = 0;
     }
 
@@ -23,6 +23,7 @@ var lineNumber = 1;
 // lineElement returns an element which can be used in the log for the line
 function lineElement(line) {
     var tr = meh.elem('tr');
+    tr.classList.add('log-line');
 
     var numtd = meh.elem('td');
     numtd.appendChild(meh.text(lineNumber.toString()));
