@@ -8,10 +8,10 @@ pbapi.branchStatus = meh.getJSONRequest('/api/branch', 'branch');
 pbapi.logurlqg = meh.urlquery('/api/log', 'buildhash');
 
 // pbapi.log reads a log stream.
-pbapi.log = (buildinfo, linecallback) => {
+pbapi.log = (hash, linecallback) => {
     return new Promise((s, f) => {
         try {
-            var logev = new EventSource(pbapi.logurlqg(buildinfo.hash));
+            var logev = new EventSource(pbapi.logurlqg(hash));
             logev.addEventListener('error', () => {
                 logev.close();
                 f('EventSource failed.');
