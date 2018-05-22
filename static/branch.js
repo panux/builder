@@ -1,4 +1,4 @@
-// branch.js is the page management code for /branch.html
+// branch.js is the page management code for /index.html
 
 // pageURL is the url of the current page
 var pageURL = new URL(window.location.href);
