@@ -38,7 +38,9 @@ function lineElement(line) {
     return tr;
 }
 
+// start starts the log loader
 function start() {
+    document.getElementById('log').classList.remove('hidden');
     var tbody = document.getElementById('logbody');
     pbapi.log(hash, (line) => tbody.appendChild(lineElement(line))).then(
         () => meh.toast(meh.text('Finished loading log.')),
