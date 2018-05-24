@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -10,6 +11,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -23,8 +27,28 @@ import (
 
 var starter *worker.Starter
 var auth [][]byte
+var ctx context.Context
 
 func main() {
+	defer log.Println("Shutdown complete.")
+
+	//waitgroup for background goroutines
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	//set up server-wide context
+	var srvcancel context.CancelFunc
+	ctx, srvcancel = context.WithCancel(context.Background())
+	sigch := make(chan os.Signal, 1)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-sigch
+		log.Println("Initiating shutdown")
+		srvcancel()
+	}()
+	signal.Notify(sigch, syscall.SIGTERM)
+
 	var addr string
 	var namespace string
 	var authkeys string
@@ -51,7 +75,20 @@ func main() {
 
 	//http
 	http.HandleFunc("/build", handleBuild)
-	log.Fatalf("failed to listen and serve: %q\n", http.ListenAndServe(addr, nil))
+	srv := http.Server{
+		Addr: addr,
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := srv.ListenAndServe()
+		if err != nil {
+			log.Printf("HTTP server crashed: %q\n", err.Error())
+			srvcancel() //shutdown
+		}
+	}()
+
+	<-ctx.Done()
 }
 
 func loadAuthKeys(path string) {
@@ -99,7 +136,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	br := req.Request.(internal.BuildRequest)
 
 	//start worker
-	work, err := starter.Start(br.Pkgen)
+	work, err := starter.Start(ctx, br.Pkgen)
 	if err != nil {
 		log.Printf("failed to start worker: %q\n", err.Error())
 		return
@@ -116,6 +153,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	if br.Pkgen.Builder == "bootstrap" {
 		if br.Pkgen.BuildDependencies != nil {
 			err = work.RunCmd(
+				ctx,
 				append(
 					[]string{"apk", "--no-cache", "add"},
 					br.Pkgen.BuildDependencies...,
@@ -140,7 +178,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//write makefile
-	err = writeMakefile(br.Pkgen, work)
+	err = writeMakefile(ctx, br.Pkgen, work)
 	if err != nil {
 		l.Log(buildlog.Line{
 			Text:   "makefile generation failed",
@@ -154,7 +192,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send source tarball
-	err = writeSourceTar(br.Pkgen, work, c)
+	err = writeSourceTar(ctx, br.Pkgen, work, c)
 	if err != nil {
 		l.Log(buildlog.Line{
 			Text:   fmt.Sprintf("source tar generation failed: %q", err.Error()),
@@ -169,6 +207,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 
 	//run build
 	err = work.RunCmd(
+		ctx,
 		[]string{"make", "-C", "/root/build", "pkgs.tar"},
 		nil,
 		worker.CmdOptions{LogOut: l},
@@ -191,7 +230,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Oh shoot, failed to send packages back: %q\n", err.Error())
 		return
 	}
-	err = work.ReadFile("/root/build/pkgs.tar", pw)
+	err = work.ReadFile(ctx, "/root/build/pkgs.tar", pw)
 	cerr := pw.Close()
 	if cerr != nil && err == nil {
 		err = cerr
@@ -219,16 +258,16 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func writeSourceTar(pk *pkgen.PackageGenerator, work *worker.Worker, c *websocket.Conn) error {
+func writeSourceTar(ctx context.Context, pk *pkgen.PackageGenerator, work *worker.Worker, c *websocket.Conn) error {
 	_, r, err := c.NextReader()
 	if err != nil {
 		return err
 	}
-	return work.WriteFile("/root/build/src.tar", r)
+	return work.WriteFile(ctx, "/root/build/src.tar", r)
 }
 
-func writeMakefile(pk *pkgen.PackageGenerator, work *worker.Worker) error {
-	err := work.Mkdir("/root/build", false)
+func writeMakefile(ctx context.Context, pk *pkgen.PackageGenerator, work *worker.Worker) error {
+	err := work.Mkdir(ctx, "/root/build", false)
 	if err != nil {
 		return err
 	}
@@ -237,7 +276,7 @@ func writeMakefile(pk *pkgen.PackageGenerator, work *worker.Worker) error {
 	if err != nil {
 		return err
 	}
-	err = work.WriteFile("/root/build/Makefile", buf)
+	err = work.WriteFile(ctx, "/root/build/Makefile", buf)
 	if err != nil {
 		return err
 	}
@@ -252,11 +291,12 @@ func doBootstrap(c *websocket.Conn, work *worker.Worker, l buildlog.Handler) err
 	if mt != websocket.BinaryMessage {
 		return errors.New("bad message")
 	}
-	err = work.WriteFile("/root/pkgs.tar", r)
+	err = work.WriteFile(ctx, "/root/pkgs.tar", r)
 	if err != nil {
 		return err
 	}
 	err = work.RunCmd(
+		ctx,
 		[]string{"/usr/bin/busybox", "sh", "/root/bootstrap.sh"},
 		nil,
 		worker.CmdOptions{LogOut: l},
