@@ -2,10 +2,13 @@
 package dlapi
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/panux/builder/pkgen"
 )
 
 //DlClient is a client for a download server
@@ -52,14 +55,19 @@ func (c *DlClient) Status() (*Status, error) {
 }
 
 //Get runs Loader.Get on the server (with cache)
-func (c *DlClient) Get(u *url.URL) (int64, io.ReadCloser, error) {
+func (c *DlClient) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser, error) {
 	gurl, err := url.Parse("/get")
 	if err != nil {
 		return -1, nil, err
 	}
 	gurl.Query().Add("url", u.String())
 	gurl = c.base.ResolveReference(gurl)
-	resp, err := c.cli.Get(gurl.String())
+	req, err := http.NewRequest(http.MethodGet, gurl.String(), nil)
+	if err != nil {
+		return -1, nil, err
+	}
+	req = req.WithContext(ctx)
+	resp, err := c.cli.Do(req)
 	if err != nil {
 		return -1, nil, err
 	}
@@ -84,3 +92,5 @@ func (c *DlClient) SupportedProtocols() ([]string, error) {
 	}
 	return protos, nil
 }
+
+var l pkgen.Loader = &DlClient{}
