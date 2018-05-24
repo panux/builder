@@ -132,7 +132,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	}
 
 	//send souce tar
-	err = wsSendSources(c, bjr)
+	err = wsSendSources(ctx, c, bjr)
 	if err != nil {
 		return
 	}
@@ -221,7 +221,7 @@ func wsSendPackages(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	return
 }
 
-func wsSendSources(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
+func wsSendSources(ctx context.Context, c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	w, err := c.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		return err
@@ -232,6 +232,6 @@ func wsSendSources(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 			err = cerr
 		}
 	}()
-	err = bjr.writeSourceTar(w)
+	err = bjr.writeSourceTar(ctx, w)
 	return
 }

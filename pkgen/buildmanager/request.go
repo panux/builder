@@ -2,6 +2,7 @@ package buildmanager
 
 import (
 	"archive/tar"
+	"context"
 	"io"
 	"strings"
 
@@ -95,6 +96,6 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 	return
 }
 
-func (bjr *BuildJobRequest) writeSourceTar(w io.Writer) error {
-	return bjr.pk.WriteSourceTar(w, bjr.loader, 100*1024*1024)
+func (bjr *BuildJobRequest) writeSourceTar(ctx context.Context, w io.Writer) error {
+	return bjr.pk.WriteSourceTar(ctx, w, bjr.loader, 100*1024*1024)
 }
