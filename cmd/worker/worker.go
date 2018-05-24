@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/pem"
 	"errors"
 	"flag"
@@ -13,7 +14,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"sort"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -23,7 +27,28 @@ import (
 
 var authk []byte //authentication public key
 
+var ctx context.Context
+
 func main() {
+	defer log.Println("Shutdown complete.")
+
+	//waitgroup for background goroutines
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	//set up server-wide context
+	var srvcancel context.CancelFunc
+	ctx, srvcancel = context.WithCancel(context.Background())
+	sigch := make(chan os.Signal, 1)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-sigch
+		log.Println("Initiating shutdown")
+		srvcancel()
+	}()
+	signal.Notify(sigch, syscall.SIGTERM)
+
 	//parse flags
 	var tlskeypath string
 	var tlscertpath string
@@ -42,7 +67,21 @@ func main() {
 	http.HandleFunc("/run", handleRunCmd)
 
 	//run http server
-	log.Fatalf("Failed to listen: %q\n", http.ListenAndServeTLS(addr, tlskeypath, tlscertpath, nil))
+	srv := &http.Server{
+		Addr: addr,
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := srv.ListenAndServeTLS(tlskeypath, tlscertpath)
+		if err != nil {
+			log.Printf("HTTP server crashed: %q\n", err.Error())
+			srvcancel() //shutdown
+		}
+	}()
+
+	//wait for server to be shut down
+	<-ctx.Done()
 }
 
 func loadAuthKey(path string) ([]byte, error) {
@@ -105,6 +144,9 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 func handleWriteFile(w http.ResponseWriter, r *http.Request) {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusNotImplemented)
 		return
@@ -139,6 +181,18 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	fin := make(chan struct{})
+	defer close(fin)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		select {
+		case <-ctx.Done():
+			f.Close()
+		case <-fin:
+		}
+	}()
+
 	_, err = io.Copy(f, r.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("write error: %q", err.Error()), http.StatusInternalServerError)
@@ -146,6 +200,9 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func handleReadFile(w http.ResponseWriter, r *http.Request) {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusNotImplemented)
 		return
@@ -172,8 +229,30 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	frreq := req.Request.(internal.FileReadRequest)
 
-	r.URL.Path = "" //tell ServeFile to ignore path in request
-	http.ServeFile(w, r, frreq.Path)
+	f, err := os.Open(frreq.Path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		} else {
+			http.Error(w, fmt.Sprintf("failed to open file: %q", err.Error()), http.StatusInternalServerError)
+		}
+		return
+	}
+	defer f.Close()
+
+	fin := make(chan struct{})
+	defer close(fin)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		select {
+		case <-ctx.Done():
+			f.Close()
+		case <-fin:
+		}
+	}()
+
+	io.Copy(w, f)
 }
 
 var wsup = &websocket.Upgrader{ //websocket upgrader for handleRunCmd
@@ -193,7 +272,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	}
 	cmdr := req.Request.(internal.CommandRequest)
 
-	cmd := exec.Command(cmdr.Argv[0], cmdr.Argv[1:]...)
+	cmd := exec.CommandContext(ctx, cmdr.Argv[0], cmdr.Argv[1:]...)
 	cmd.Dir = "/"
 	if cmdr.Env != nil {
 		env := make([]string, len(cmdr.Env))
