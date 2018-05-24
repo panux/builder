@@ -2,12 +2,15 @@ package main
 
 import (
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
@@ -21,7 +24,7 @@ import (
 )
 
 var prettyInfo = `
-{{- range .}}{{with (preprocess (unmarshal (fopen .))) -}}
+{{- range .}}{{with (preprocess false (unmarshal (fopen .))) -}}
 Packages:{{range .ListPackages}} {{.}}{{end}}
 Version: {{.Version}}
 Builder: {{.Builder}}
@@ -41,6 +44,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	cctx, cancel := context.WithCancel(context.Background())
+	sigch := make(chan os.Signal, 1)
+	go func() {
+		<-sigch
+		log.Println("Cancelled")
+		cancel()
+	}()
+	signal.Notify(sigch, syscall.SIGTERM)
 	app.Commands = []cli.Command{
 		cli.Command{
 			Name:  "info",
@@ -80,7 +91,7 @@ func main() {
 								}
 								return
 							},
-							"preprocess": func(rpg *pkgen.RawPackageGenerator, archs ...pkgen.Arch) (*pkgen.PackageGenerator, error) {
+							"preprocess": func(rpg *pkgen.RawPackageGenerator, bootstrap bool, archs ...pkgen.Arch) (*pkgen.PackageGenerator, error) {
 								switch len(archs) {
 								case 0:
 									archs = []pkgen.Arch{
@@ -93,7 +104,7 @@ func main() {
 								default:
 									return nil, errors.New("too many arguments")
 								}
-								return rpg.Preprocess(archs[0], archs[1])
+								return rpg.Preprocess(archs[0], archs[1], bootstrap)
 							},
 						},
 					).
@@ -123,6 +134,10 @@ func main() {
 					Value: harch.String(),
 					Usage: "build arch to use when preprocessing",
 				},
+				cli.BoolFlag{
+					Name:  "bootstrap",
+					Usage: "whether to create a bootstrap makefile",
+				},
 			},
 			Action: func(ctx *cli.Context) (err error) {
 				if len(ctx.Args()) != 1 {
@@ -132,6 +147,10 @@ func main() {
 				if err != nil {
 					return cli.NewExitError(err, 65)
 				}
+				go func() { //do cancel w/ file f
+					<-cctx.Done()
+					f.Close()
+				}()
 				defer func() {
 					cerr := f.Close()
 					if cerr != nil {
@@ -145,6 +164,10 @@ func main() {
 					return cli.NewExitError(err, 65)
 				}
 				defer inf.Close()
+				go func() { //do cancel w/ inf
+					<-cctx.Done()
+					inf.Close()
+				}()
 				rpg, err := pkgen.UnmarshalPkgen(inf)
 				if err != nil {
 					return cli.NewExitError(err, 65)
@@ -152,6 +175,7 @@ func main() {
 				pg, err := rpg.Preprocess(
 					pkgen.Arch(ctx.String("hostarch")),
 					pkgen.Arch(ctx.String("buildarch")),
+					ctx.Bool("bootstrap"),
 				)
 				if err != nil {
 					return cli.NewExitError(err, 65)
@@ -187,6 +211,10 @@ func main() {
 					Value: 100 * 1024 * 1024,
 					Usage: "maximum amount of data to buffer in bytes",
 				},
+				cli.BoolFlag{
+					Name:  "bootstrap",
+					Usage: "whether to create a bootstrap makefile",
+				},
 			},
 			Action: func(ctx *cli.Context) (err error) {
 				//pre-checks
@@ -206,6 +234,10 @@ func main() {
 					return cli.NewExitError(err, 65)
 				}
 				defer inf.Close()
+				go func() { //do cancel w/ inf
+					<-cctx.Done()
+					inf.Close()
+				}()
 				rpg, err := pkgen.UnmarshalPkgen(inf)
 				if err != nil {
 					return cli.NewExitError(err, 65)
@@ -213,6 +245,7 @@ func main() {
 				pg, err := rpg.Preprocess(
 					pkgen.Arch(ctx.String("hostarch")),
 					pkgen.Arch(ctx.String("buildarch")),
+					ctx.Bool("bootstrap"),
 				)
 				if err != nil {
 					return cli.NewExitError(err, 65)
@@ -257,7 +290,7 @@ func main() {
 					return cli.NewExitError(err, 65)
 				}
 				//generate tar
-				err = pg.WriteSourceTar(w, l, ctx.Uint("maxbuf"))
+				err = pg.WriteSourceTar(cctx, w, l, ctx.Uint("maxbuf"))
 				return
 			},
 		},
