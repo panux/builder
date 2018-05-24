@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -126,7 +127,7 @@ func main() {
 				}
 			}()
 			//download
-			_, r, err := loader.Get(u)
+			_, r, err := loader.Get(context.Background(), u)
 		dlfail:
 			if err != nil {
 				http.Error(w, "download failure", http.StatusInternalServerError)
