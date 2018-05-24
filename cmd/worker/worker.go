@@ -65,6 +65,7 @@ func main() {
 	http.HandleFunc("/write", handleWriteFile)
 	http.HandleFunc("/read", handleReadFile)
 	http.HandleFunc("/run", handleRunCmd)
+	http.HandleFunc("/status", handleStatus)
 
 	//run http server
 	srv := &http.Server{
@@ -104,6 +105,10 @@ func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 		return nil, errAccessDenied
 	}
 	return req, nil
+}
+
+func handleStatus(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("online"))
 }
 
 func handleMkdir(w http.ResponseWriter, r *http.Request) {

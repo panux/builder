@@ -7,7 +7,10 @@ import (
 	"context"
 	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"sync"
 
@@ -49,6 +52,31 @@ type BuildOptions struct {
 	//Context is a contest for cancellation.
 	//Optional. Defaults to context.Background.
 	Context context.Context
+}
+
+//Status runs a status probe on the server
+func (cli *Client) Status() error {
+	//determine request URL
+	u, err := cli.u.Parse("/build")
+	if err != nil {
+		return err
+	}
+	u = cli.u.ResolveReference(u)
+
+	//send request
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(resp.Status)
+	}
+	_, err = io.Copy(ioutil.Discard, resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //Build builds a package

@@ -75,6 +75,7 @@ func main() {
 
 	//http
 	http.HandleFunc("/build", handleBuild)
+	http.HandleFunc("/status", handleStatus)
 	srv := http.Server{
 		Addr: addr,
 	}
@@ -101,6 +102,10 @@ func loadAuthKeys(path string) {
 	if err != nil {
 		log.Fatalf("Failed to unmarshal auth: %q\n", err.Error())
 	}
+}
+
+func handleStatus(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("online"))
 }
 
 var wsup = &websocket.Upgrader{ //websocket upgrader

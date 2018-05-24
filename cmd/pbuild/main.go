@@ -133,6 +133,14 @@ func main() {
 	router := mux.NewRouter()
 	router.Handle("/api/branches", branch).Methods("GET")
 	router.Handle("/api/log", logmanager)
+	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) { //status probe for Kubernetes
+		err := bmcli.Status()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("build manager status error: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte("online"))
+	})
 	router.Handle("/", http.FileServer(http.Dir(Config.Static)))
 
 	//start HTTP server
