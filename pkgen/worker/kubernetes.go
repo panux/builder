@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -57,11 +58,8 @@ func (te TimeoutErr) String() string {
 	return te.Error()
 }
 
-//wait for pod to start (with 10 min timeout)
-func (wp *workerPod) waitStart() error {
-	//get start time for timeout
-	start := time.Now()
-
+//wait for pod to start (caller must provide cancellation)
+func (wp *workerPod) waitStart(ctx context.Context) error {
 	for {
 		//update status of pod
 		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).UpdateStatus(wp.pod)
@@ -85,10 +83,11 @@ func (wp *workerPod) waitStart() error {
 			log.Printf("Unrecognized kubernetes pod phase: %q\n", string(wp.pod.Status.Phase))
 		}
 
-		//check for timeout (10 min)
-		waited := time.Since(start)
-		if waited > time.Minute*10 {
-			return TimeoutErr{waited}
+		//check for cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
 		}
 
 		//wait 5 seconds before retrying

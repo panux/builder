@@ -2,6 +2,7 @@ package worker
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -39,7 +40,7 @@ func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
 }
 
 //Start starts a new worker using kubernetes
-func (s *Starter) Start(pk *pkgen.PackageGenerator) (w *Worker, err error) {
+func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	//create worker pod struct
 	wpod := new(workerPod)
 	defer func() {
@@ -128,9 +129,9 @@ func (s *Starter) Start(pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	}
 
 	//wait for pod to start up
-	err = wpod.waitStart()
+	err = wpod.waitStart(ctx)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	//prepare clients

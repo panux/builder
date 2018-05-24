@@ -1,11 +1,14 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/panux/builder/internal"
@@ -14,7 +17,7 @@ import (
 
 //Mkdir makes a directory on the worker.
 //If mkparent is true, it will create parent directories.
-func (w *Worker) Mkdir(path string, mkparent bool) (err error) {
+func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/mkdir")
 	if err != nil {
@@ -34,11 +37,17 @@ func (w *Worker) Mkdir(path string, mkparent bool) (err error) {
 	}
 
 	//send post request
-	resp, err := w.hcl.PostForm(u.String(), url.Values{
-		"request": []string{string(rdat)},
-	})
+	req, err := http.NewRequest(http.MethodPost, u.String(), nil)
 	if err != nil {
-		return
+		return err
+	}
+	req = req.WithContext(ctx)
+	req.Form = url.Values{
+		"request": []string{string(rdat)},
+	}
+	resp, err := w.hcl.Do(req)
+	if err != nil {
+		return err
 	}
 
 	//discard response
@@ -69,7 +78,7 @@ func (fwr *fileWReader) Read(dat []byte) (int, error) {
 
 //WriteFile writes a file on the worker.
 //Data is copied from the io.Reader src.
-func (w *Worker) WriteFile(path string, src io.Reader) (err error) {
+func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/write")
 	if err != nil {
@@ -93,9 +102,15 @@ func (w *Worker) WriteFile(path string, src io.Reader) (err error) {
 		header: rdat,
 		r:      src,
 	}
-	resp, err := w.hcl.Post(u.String(), "application/octet-stream", fwr)
+	req, err := http.NewRequest(http.MethodPost, u.String(), fwr)
 	if err != nil {
-		return
+		return err
+	}
+	req = req.WithContext(ctx)
+	req.Header.Set("Content-Type", "application/octet-stream")
+	resp, err := w.hcl.Do(req)
+	if err != nil {
+		return err
 	}
 
 	//discard response
@@ -111,7 +126,7 @@ func (w *Worker) WriteFile(path string, src io.Reader) (err error) {
 
 //ReadFile reads a file from the worker.
 //The file contents are copied into dst.
-func (w *Worker) ReadFile(path string, dst io.Writer) (err error) {
+func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/read")
 	if err != nil {
@@ -130,9 +145,15 @@ func (w *Worker) ReadFile(path string, dst io.Writer) (err error) {
 	}
 
 	//send post request
-	resp, err := w.hcl.PostForm(u.String(), url.Values{
+	req, err := http.NewRequest(http.MethodPost, u.String(), nil)
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+	req.Form = url.Values{
 		"request": []string{string(rdat)},
-	})
+	}
+	resp, err := w.hcl.Do(req)
 	if err != nil {
 		return
 	}
@@ -178,7 +199,11 @@ var ErrCmdFail = errors.New("command did not report success")
 
 //RunCmd runs a command on the worker.
 //If stdin is not set then stdin will not be connected.
-func (w *Worker) RunCmd(argv []string, stdin io.Reader, opts CmdOptions) (err error) {
+func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opts CmdOptions) (err error) {
+	//waitgroup
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	//fill in blanks with defaults
 	opts = opts.defaults()
 
@@ -236,6 +261,19 @@ func (w *Worker) RunCmd(argv []string, stdin io.Reader, opts CmdOptions) (err er
 		}
 	}()
 
+	//start cancellation w/ close
+	fin := make(chan struct{})
+	defer close(fin)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		select {
+		case <-ctx.Done():
+			c.Close()
+		case <-fin:
+		}
+	}()
+
 	//write request to websocket
 	err = c.WriteMessage(websocket.BinaryMessage, rdat)
 	if err != nil {
@@ -248,7 +286,9 @@ func (w *Worker) RunCmd(argv []string, stdin io.Reader, opts CmdOptions) (err er
 		if err != nil {
 			return err
 		}
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			io.Copy(swriter, stdin)
 			defer swriter.Close()
 		}()
