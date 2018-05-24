@@ -3,6 +3,7 @@ package pkgen
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 //WriteSourceTar creates a tar file containing all of the source files necessary for building a package
 //Also includes the Makefile
 //May buffer files of unknown size up to maxbuf bytes in memory
-func (pg *PackageGenerator) WriteSourceTar(w io.Writer, loader Loader, maxbuf uint) (err error) {
+func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loader Loader, maxbuf uint) (err error) {
 	tw := tar.NewWriter(w)
 	defer func() {
 		cerr := tw.Close()
@@ -60,7 +61,7 @@ func (pg *PackageGenerator) WriteSourceTar(w io.Writer, loader Loader, maxbuf ui
 	for _, s := range pg.Sources {
 		var l int64
 		var r io.ReadCloser
-		l, r, err = loader.Get(s)
+		l, r, err = loader.Get(ctx, s)
 		if err != nil {
 			return
 		}

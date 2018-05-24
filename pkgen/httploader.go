@@ -2,6 +2,7 @@ package pkgen
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -21,9 +22,11 @@ var hprotos = []string{"http", "https"}
 func (hl *httpLoader) SupportedProtocols() ([]string, error) {
 	return hprotos, nil
 }
-func (hl *httpLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
+func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser, error) {
 	shasum := u.Query().Get("sha256sum")
-	switch u.Scheme { //check that the scheme is supported
+
+	//check that the scheme is supported
+	switch u.Scheme {
 	case "http":
 		if shasum == "" { //insecure resource, needs hash
 			return -1, nil, ErrMissingHash
@@ -32,6 +35,8 @@ func (hl *httpLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
 	default:
 		return -1, nil, ErrUnsupportedProtocol
 	}
+
+	//decode hash if present
 	var shs []byte
 	if shasum != "" {
 		sum, err := hex.DecodeString(shasum) //decode sha256sum from hex
@@ -43,11 +48,20 @@ func (hl *httpLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
 		}
 		shs = sum
 	}
-	resp, err := hl.cli.Get(u.String())
+
+	//prepare get request
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return -1, nil, err
 	}
-	if shs != nil { //it is hashed, download to memory and verify
+	req = req.WithContext(ctx)
+	resp, err := hl.cli.Do(req)
+	if err != nil {
+		return -1, nil, err
+	}
+
+	//if it is hashed, download to memory and verify
+	if shs != nil {
 		if resp.ContentLength > int64(hl.maxbuf) {
 			return -1, nil, ErrExceedsMaxBuffer
 		}
@@ -67,6 +81,8 @@ func (hl *httpLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
 		}
 		return resp.ContentLength, ioutil.NopCloser(buf), nil
 	}
+
+	//return regular response
 	return resp.ContentLength, resp.Body, nil
 }
 

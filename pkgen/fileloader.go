@@ -1,6 +1,7 @@
 package pkgen
 
 import (
+	"context"
 	"io"
 	"net/url"
 
@@ -17,7 +18,7 @@ func (fl fileLoader) SupportedProtocols() ([]string, error) {
 	return fprotos, nil
 }
 
-func (fl fileLoader) Get(u *url.URL) (int64, io.ReadCloser, error) {
+func (fl fileLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser, error) {
 	var l int64
 	info, err := fl.fs.Stat(u.Path)
 	if err == nil {
