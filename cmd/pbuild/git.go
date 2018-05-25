@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 )
 
-// GitRepo is a git repository
+// GitRepo is a git repository.
 type GitRepo struct {
 	lck sync.Mutex
 	dir string

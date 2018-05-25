@@ -19,11 +19,16 @@ import (
 	"github.com/panux/builder/pkgen/buildlog"
 )
 
-// Client is a client to the buildmanager server
+// Client is a client to the buildmanager server.
 type Client struct {
-	u     *url.URL
+	// u is the base URL to send requests to.
+	u *url.URL
+
+	// authk is the private key to use to sign requests.
 	authk *rsa.PrivateKey
-	wscl  *websocket.Dialer
+
+	// wscl is the websocket dialer to use to perform websocket requests.
+	wscl *websocket.Dialer
 }
 
 // NewClient creates a new Client for the server at the provided URL.
@@ -39,7 +44,7 @@ func NewClient(u *url.URL, auth *rsa.PrivateKey, dial *websocket.Dialer) *Client
 	}
 }
 
-// BuildOptions is a set of options for Build
+// BuildOptions is a set of options for Build.
 type BuildOptions struct {
 	// Out is a function which is called to write the output packages.
 	// Required.
@@ -54,7 +59,7 @@ type BuildOptions struct {
 	Context context.Context
 }
 
-// Status runs a status probe on the server
+// Status runs a status probe on the server.
 func (cli *Client) Status() error {
 	//determine request URL
 	u, err := cli.u.Parse("/build")
@@ -79,7 +84,7 @@ func (cli *Client) Status() error {
 	return nil
 }
 
-// Build builds a package
+// Build builds a package.
 func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	//determine request URL
 	u, err := cli.u.Parse("/build")
@@ -168,7 +173,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	return
 }
 
-// wsSendRequest sends a request over a websocket
+// wsSendRequest sends a request over a websocket.
 func wsSendRequest(c *websocket.Conn, r []byte) (err error) {
 	w, err := c.NextWriter(websocket.TextMessage)
 	if err != nil {
@@ -184,7 +189,7 @@ func wsSendRequest(c *websocket.Conn, r []byte) (err error) {
 	return
 }
 
-// procWsRead processes a stream of websocket reads
+// procWsRead processes a stream of websocket reads.
 func procWsRead(c *websocket.Conn, opts BuildOptions, wg *sync.WaitGroup, e *error) {
 	defer wg.Done()
 	var err error
@@ -203,7 +208,7 @@ func procWsRead(c *websocket.Conn, opts BuildOptions, wg *sync.WaitGroup, e *err
 	}
 }
 
-// wsDoRead handles a websocket read
+// wsDoRead handles a websocket read.
 func wsDoRead(c *websocket.Conn, opts BuildOptions) error {
 	mt, r, err := c.NextReader()
 	if err != nil {
@@ -237,7 +242,7 @@ func wsDoRead(c *websocket.Conn, opts BuildOptions) error {
 	return nil
 }
 
-// wsSendPackages sends the packages required for the build
+// wsSendPackages sends the packages required for the build.
 func wsSendPackages(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	w, err := c.NextWriter(websocket.BinaryMessage)
 	if err != nil {
@@ -253,7 +258,7 @@ func wsSendPackages(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	return
 }
 
-// wsSendSources sends a tar of the sources
+// wsSendSources sends a tar of the sources.
 func wsSendSources(ctx context.Context, c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	w, err := c.NextWriter(websocket.BinaryMessage)
 	if err != nil {

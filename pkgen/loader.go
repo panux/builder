@@ -23,19 +23,19 @@ type Loader interface {
 	Get(context.Context, *url.URL) (int64, io.ReadCloser, error)
 }
 
-// multiLoader is a loader that uses a group of other loaders to load sources
+// multiLoader is a loader that uses a group of other loaders to load sources.
 type multiLoader struct {
 	loaders map[string]Loader
 	protos  []string
 }
 
-// ErrUnsupportedProtocol is returned by Loader.Get if the protocol of the URL is unsupported
+// ErrUnsupportedProtocol is returned by Loader.Get if the protocol of the URL is unsupported.
 var ErrUnsupportedProtocol = errors.New("unsupported protocol")
 
-// ErrExceedsMaxBuffer is an error returned by Loader.Get if the resource is too big to be buffered
+// ErrExceedsMaxBuffer is an error returned by Loader.Get if the resource is too big to be buffered.
 var ErrExceedsMaxBuffer = errors.New("resource exceeds maximum buffer size")
 
-// ErrMissingHash is an error returned by Loader.Get if the resource is being loaded over an insecure protocol and does not have a hash
+// ErrMissingHash is an error returned by Loader.Get if the resource is being loaded over an insecure protocol and does not have a hash.
 var ErrMissingHash = errors.New("insecure resource does not have hash")
 
 func (ml *multiLoader) SupportedProtocols() ([]string, error) {
@@ -49,10 +49,10 @@ func (ml *multiLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadClose
 	return nl.Get(ctx, u)
 }
 
-// NewMultiLoader returns a Loader which uses the input loaders
-// SupportedProtocols is the union of the SupportedProtocols sets from loaders
-// If multiple loaders support the same protocol, the last one will be used
-// If no loaders are input, NewMultiLoader will return nil
+// NewMultiLoader returns a Loader which uses the input loaders.
+// SupportedProtocols is the union of the SupportedProtocols sets from loaders.
+// If multiple loaders support the same protocol, the last one will be used.
+// If no loaders are input, NewMultiLoader will return nil.
 func NewMultiLoader(loaders ...Loader) (Loader, error) {
 	//generate map of scheme to Loader
 	ldm := make(map[string]Loader)

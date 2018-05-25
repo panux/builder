@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-// PkgInfo is a container with the data in a .pkginfo
+// PkgInfo is a container with the data in a .pkginfo.
 type PkgInfo struct {
 	Name         string
 	Version      string
 	Dependencies []string
 }
 
-// WriteTo writes a PkgInfo (implements io.WriterTo)
+// WriteTo writes a PkgInfo (implements io.WriterTo).
 func (pki PkgInfo) WriteTo(w io.Writer) (int64, error) {
 	n1, err := fmt.Fprintf(w, "NAME=%q\nVERSION=%q\n", pki.Name, pki.Version)
 	if err != nil {
@@ -29,7 +29,7 @@ func (pki PkgInfo) WriteTo(w io.Writer) (int64, error) {
 	return int64(n1 + n2), nil
 }
 
-// PackageInfos returns a set of PkgInfo for the PackageGenerator
+// PackageInfos returns a set of PkgInfo for the PackageGenerator.
 func (pg *PackageGenerator) PackageInfos() []PkgInfo {
 	infos := make([]PkgInfo, len(pg.Packages))
 	for i, v := range pg.ListPackages() {

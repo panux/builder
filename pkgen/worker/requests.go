@@ -61,7 +61,7 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 	return
 }
 
-// fileWReader is the reader used in WriteFile
+// fileWReader is the reader used in WriteFile.
 type fileWReader struct {
 	header []byte
 	r      io.Reader
@@ -172,13 +172,13 @@ func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err 
 // CmdOptions is a set of options for running a command.
 // All fields are optional.
 type CmdOptions struct {
-	// Env is a set of environment variables to use when running the command
+	// Env is a set of environment variables to use when running the command.
 	Env map[string]string
 
-	// If DisableStdout is true then stdout will not be logged
+	// If DisableStdout is true then stdout will not be logged.
 	DisableStdout bool
 
-	// If DisableStderr is true then stdout will not be logged
+	// If DisableStderr is true then stdout will not be logged.
 	DisableStderr bool
 
 	// LogOut is the LogHandler used for output.
@@ -186,7 +186,7 @@ type CmdOptions struct {
 	LogOut buildlog.Handler
 }
 
-// defaults sets defaults where missing
+// defaults sets defaults where missing.
 func (c CmdOptions) defaults() CmdOptions {
 	if c.LogOut == nil {
 		c.LogOut = buildlog.DefaultHandler
@@ -194,7 +194,7 @@ func (c CmdOptions) defaults() CmdOptions {
 	return c
 }
 
-// ErrCmdFail is an error indicating that a command failed
+// ErrCmdFail is an error indicating that a command failed.
 var ErrCmdFail = errors.New("command did not report success")
 
 // RunCmd runs a command on the worker.

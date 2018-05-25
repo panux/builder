@@ -15,19 +15,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// workerPod is a struct containing info for manipulating the kubernetes pod
+// workerPod is a struct containing info for manipulating the kubernetes pod.
 type workerPod struct {
-	//kubernetes Clientset to use when managing the Worker
+	//kubernetes Clientset to use when managing the Worker.
 	kcl *kubernetes.Clientset
 
-	//pod that worker is in
+	//pod that worker is in.
 	pod *v1.Pod
 
-	//secret that the worket SSL key is in
+	//secret that the worket SSL key is in.
 	sslsecret *v1.Secret
 }
 
-// closePod deletes the pod
+// closePod deletes the pod.
 func (wp *workerPod) closePod() error {
 	err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).Delete(wp.pod.Name, &metav1.DeleteOptions{})
 	if err != nil {
@@ -37,7 +37,7 @@ func (wp *workerPod) closePod() error {
 	return nil
 }
 
-//closeSecret deletes the ssl cert secret
+//closeSecret deletes the ssl cert secret.
 func (wp *workerPod) closeSecret() error {
 	err := wp.kcl.CoreV1().Secrets(wp.sslsecret.Namespace).Delete(wp.sslsecret.Name, &metav1.DeleteOptions{})
 	if err != nil {
@@ -47,10 +47,10 @@ func (wp *workerPod) closeSecret() error {
 	return nil
 }
 
-// ErrSuccess is returned when a pod prematurely exits with a success code
+// ErrSuccess is returned when a pod prematurely exits with a success code.
 var ErrSuccess = errors.New("pod status is \"Succeeded\" but the pod should not have terminated yet")
 
-// waitStart waits for pod to start (caller must provide cancellation via context)
+// waitStart waits for pod to start (caller must provide cancellation via context).
 func (wp *workerPod) waitStart(ctx context.Context) error {
 	for {
 		//update status of pod
@@ -87,7 +87,7 @@ func (wp *workerPod) waitStart(ctx context.Context) error {
 	}
 }
 
-// Close closes the pod
+// Close closes the pod.
 func (wp *workerPod) Close() error {
 	if wp.pod == nil && wp.sslsecret == nil {
 		return io.ErrClosedPipe
@@ -107,7 +107,7 @@ func (wp *workerPod) Close() error {
 	return nil
 }
 
-// genPodSpec generates a Kubernetes pod spec for the worker
+// genPodSpec generates a Kubernetes pod spec for the worker.
 func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 	var img string
 	vols := []v1.Volume{

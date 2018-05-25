@@ -15,7 +15,7 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 )
 
-// Builder is a tool to build packages. All fields required.
+// Builder is a tool to build packages. All fields are required.
 type Builder struct {
 
 	// LogProvider is the source of LogHandlers used for builds.
@@ -51,7 +51,7 @@ type Builder struct {
 	// EventHandler is the xgraph.EventHandler used for the build.
 	EventHandler xgraph.EventHandler
 
-	// InfoCallback is a callback run when build info is generated
+	// InfoCallback is a callback run when build info is generated.
 	InfoCallback func(jobName string, info BuildInfo) error
 }
 
@@ -140,12 +140,19 @@ func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) 
 	return nil
 }
 
-// buildJob is an xgraph.Job for a build
+// buildJob is an xgraph.Job for a build.
 type buildJob struct {
-	buider       *Builder
-	pkgname      string
-	bootstrapped bool //whether this is bootstrapped before build
-	pk           *pkgen.PackageGenerator
+	// builder is the *Builder that this job was created by.
+	buider *Builder
+
+	// pkgname is the name of the package being built.
+	pkgname string
+
+	//bootstrap indicates whether this is bootstrapped before build.
+	bootstrapped bool
+
+	//pk is the *pkgen.PackageGenerator being built.
+	pk *pkgen.PackageGenerator
 }
 
 func (bj *buildJob) Name() string {
@@ -156,7 +163,7 @@ func (bj *buildJob) Name() string {
 	return bj.pkgname + ":" + bj.pk.BuildArch.String() + suffix
 }
 
-// pkgDeps gets a list of package rules which are dependencies
+// pkgDeps gets a list of package rules which are dependencies.
 func (bj *buildJob) pkgDeps() ([]string, error) {
 	pkfs, err := bj.buider.index.DepWalker().
 		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
@@ -179,7 +186,7 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	return pkfs, nil
 }
 
-// hash gets a hash of all of the inputs of a build
+// hash gets a hash of all of the inputs of a build.
 func (bj *buildJob) hash() ([]byte, error) {
 	bleh := []string{}
 	for _, v := range bj.pk.Sources {
@@ -266,7 +273,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 	return oh.Sum(nil), nil
 }
 
-// buildInfo returns the BuildInfo for the buildJob
+// buildInfo returns the BuildInfo for the buildJob.
 func (bj *buildJob) buildInfo() (BuildInfo, error) {
 	h, err := bj.hash()
 	if err != nil {
@@ -347,13 +354,13 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	})
 }
 
-// OutputHandler is an interface to handle the output of builds
+// OutputHandler is an interface to handle the output of builds.
 type OutputHandler interface {
 	Store(build BuildInfo, filename string, body io.ReadCloser) error
 }
 
-// PackageRetriever is an interface to load packages
+// PackageRetriever is an interface to load packages.
 type PackageRetriever interface {
-	// GetPkg gets a package with the given name and arch
+	// GetPkg gets a package with the given name and arch.
 	GetPkg(name string, arch pkgen.Arch, bootstrap bool) (len uint32, r io.ReadCloser, ext string, err error)
 }

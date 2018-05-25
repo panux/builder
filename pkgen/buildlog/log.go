@@ -11,17 +11,17 @@ import (
 	"sync"
 )
 
-// Stream is a stream which Lines can be tagged with
+// Stream is a stream which Lines can be tagged with.
 type Stream uint8
 
 const (
-	// StreamStdout is a LogStream for stdout
+	// StreamStdout is a LogStream for stdout.
 	StreamStdout Stream = 1
-	// StreamStderr is a LogStream for stderr
+	// StreamStderr is a LogStream for stderr.
 	StreamStderr Stream = 2
-	// StreamBuild is a LogStream for info from the build system
+	// StreamBuild is a LogStream for info from the build system.
 	StreamBuild Stream = 3
-	// StreamMeta is a LogStream for build metadata
+	// StreamMeta is a LogStream for build metadata.
 	StreamMeta Stream = 4
 )
 
@@ -40,7 +40,7 @@ func (s Stream) String() string {
 	}
 }
 
-// Line is a line of log output
+// Line is a line of log output.
 type Line struct {
 	Text   string `json:"text"`
 	Stream Stream `json:"stream"`
@@ -50,7 +50,7 @@ func (ll Line) String() string {
 	return fmt.Sprintf("[%s] %s", ll.Stream.String(), ll.Stream.String())
 }
 
-// Handler is an interface used for log output
+// Handler is an interface used for log output.
 type Handler interface {
 	Log(Line) error
 	io.Closer
@@ -106,7 +106,7 @@ func ReadLog(lh Handler, stream Stream, r io.Reader) error {
 	return nil
 }
 
-// mutexedLogHandler is a Handler that uses a mutex to protect from concurrent access
+// mutexedLogHandler is a Handler that uses a mutex to protect from concurrent access.
 type mutexedLogHandler struct {
 	lck sync.Mutex
 	lh  Handler

@@ -172,6 +172,7 @@ func main() {
 	<-srvctx.Done()
 }
 
+// loadConfig reads the Config from the file at the given path.
 func loadConfig(path string) {
 	f, err := os.Open(path)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 )
 
-// ErrPkgNotFound is an error type indicating that the specified package was not found
+// ErrPkgNotFound is an error type indicating that the specified package was not found.
 type ErrPkgNotFound struct {
 	PkgName string
 }
@@ -22,16 +22,16 @@ func (err ErrPkgNotFound) String() string {
 	return err.Error()
 }
 
-// RawPackageIndex is an in-memory index of packages
+// RawPackageIndex is an in-memory index of packages.
 type RawPackageIndex map[string]*RawPkent
 
-// RawPkent is an entry in a RawPackageIndex
+// RawPkent is an entry in a RawPackageIndex.
 type RawPkent struct {
 	Path  string
 	Pkgen *pkgen.RawPackageGenerator
 }
 
-// DepWalker returns a DepWalker function which resolves dependencies using the RawPackageIndex
+// DepWalker returns a DepWalker function which resolves dependencies using the RawPackageIndex.
 func (rpi RawPackageIndex) DepWalker() DepWalker {
 	return func(p string) ([]string, error) {
 		pe := rpi[p]
@@ -42,7 +42,7 @@ func (rpi RawPackageIndex) DepWalker() DepWalker {
 	}
 }
 
-// List gets a list of packages
+// List gets a list of packages.
 func (rpi RawPackageIndex) List() []string {
 	//get name list
 	names := make([]string, len(rpi))
@@ -78,7 +78,7 @@ func indexEnts(ents []*RawPkent) RawPackageIndex {
 	return rpi
 }
 
-// loadEnt loads a package entry
+// loadEnt loads a package entry.
 func loadEnt(fs vfs.FileSystem, path string) (ent *RawPkent, err error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -100,12 +100,12 @@ func loadEnt(fs vfs.FileSystem, path string) (ent *RawPkent, err error) {
 	}, nil
 }
 
-// FindPkgens finds all pkgens in a vfs
+// FindPkgens finds all pkgens in a VFS.
 func FindPkgens(dir vfs.FileSystem) ([]string, error) {
 	return findPkgenV(dir, "/")
 }
 
-// findPkgenV is a recursive function to find pkgens in a VFS
+// findPkgenV is a recursive function to find pkgens in a VFS.
 func findPkgenV(fs vfs.FileSystem, dir string) ([]string, error) {
 	files, err := fs.ReadDir(dir)
 	if err != nil {
@@ -126,7 +126,7 @@ func findPkgenV(fs vfs.FileSystem, dir string) ([]string, error) {
 	return pks, nil
 }
 
-// IndexDir finds all pkgens in a dir and uses them to make a RawPackageIndex
+// IndexDir finds all pkgens in a dir and uses them to make a RawPackageIndex.
 func IndexDir(dir vfs.FileSystem) (RawPackageIndex, error) {
 	pkgens, err := FindPkgens(dir)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/panux/builder/pkgen/buildmanager"
 )
 
-// parseJobName parses the name of a job into identifiers for a build
+// parseJobName parses the name of a job into identifiers for a build.
 func parseJobName(jobname string) (name string, arch pkgen.Arch, bootstrap bool) {
 	if strings.HasSuffix(jobname, "-bootstrap") {
 		bootstrap = true
@@ -23,14 +23,14 @@ func parseJobName(jobname string) (name string, arch pkgen.Arch, bootstrap bool)
 	return name, arch, bootstrap
 }
 
-// BranchStatus is the status of a branch
+// BranchStatus is the status of a branch.
 type BranchStatus struct {
 	lck sync.RWMutex
 
-	// BranchName is the name of the branch
+	// BranchName is the name of the branch.
 	BranchName string `json:"branch"`
 
-	// Builds is the set of BuildStatus objects
+	// Builds is the set of BuildStatus objects.
 	Builds map[string]*BuildStatus `json:"builds"`
 }
 
@@ -49,28 +49,28 @@ func (bs *BranchStatus) updateState(job string, state BuildState) {
 	bs.Builds[job].State = state
 }
 
-// OnQueued is used to implement EventHandler
+// OnQueued is used to implement EventHandler.
 func (bs *BranchStatus) OnQueued(job string) {
 	bs.updateState(job, BuildStateQueued)
 }
 
-// OnStart is used to implement EventHandler
+// OnStart is used to implement EventHandler.
 func (bs *BranchStatus) OnStart(job string) {
 	bs.updateState(job, BuildStateRunning)
 }
 
-// OnFinish is used to implement EventHandler
+// OnFinish is used to implement EventHandler.
 func (bs *BranchStatus) OnFinish(job string) {
 	bs.updateState(job, BuildStateFinished)
 }
 
-// OnError is used to implement EventHandler
+// OnError is used to implement EventHandler.
 func (bs *BranchStatus) OnError(job string, err error) {
 	log.Printf("Build %q failed: %q\n", job, err.Error())
 	bs.updateState(job, BuildStateFailed)
 }
 
-// ListCallback can be used for listcallback in the Build func
+// ListCallback can be used for listcallback in the Build func.
 func (bs *BranchStatus) ListCallback(list []string) error {
 	//generate build map
 	builds := make(map[string]*BuildStatus)
@@ -106,7 +106,7 @@ func (bs *BranchStatus) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(bs)
 }
 
-// BuildStatus is the status of a build
+// BuildStatus is the status of a build.
 type BuildStatus struct {
 	Name      string                  `json:"name"`
 	Arch      pkgen.Arch              `json:"arch"`
@@ -115,7 +115,7 @@ type BuildStatus struct {
 	State     BuildState              `json:"state"`
 }
 
-// BuildState is a build state
+// BuildState is a build state.
 type BuildState string
 
 const (

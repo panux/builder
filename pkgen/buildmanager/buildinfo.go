@@ -11,12 +11,19 @@ import (
 	"github.com/panux/builder/pkgen"
 )
 
-// BuildInfo is a struct containing identifying information for the build
+// BuildInfo is a struct containing identifying information for the build.
 type BuildInfo struct {
-	PackageName string            `json:"name"`
-	Arch        pkgen.Arch        `json:"arch"`
-	Bootstrap   bool              `json:"bootstrap"`
-	Hash        [sha256.Size]byte `json:"hash"`
+	// PackageName is the name of the package being built.
+	PackageName string `json:"name"`
+
+	// Arch is the arch for which the build is being run.
+	Arch pkgen.Arch `json:"arch"`
+
+	// Bootstrap indicates whether or not this is a bootstrap build.
+	Bootstrap bool `json:"bootstrap"`
+
+	// Hash is the SHA256 hash of the build inputs.
+	Hash [sha256.Size]byte `json:"hash"`
 }
 
 // BuildCache is an interface to check whether builds are up to date.
@@ -25,11 +32,11 @@ type BuildCache interface {
 	// CheckLatest checks if the BuildInfo matches the current version.
 	CheckLatest(BuildInfo) (bool, error)
 
-	// UpdateCache updates a cache entry for a BuildInfo
+	// UpdateCache updates a cache entry for a BuildInfo.
 	UpdateCache(BuildInfo) error
 }
 
-// jsonDirCache is a BuildCache which uses a dir of JSON blobs
+// jsonDirCache is a BuildCache which uses a dir of JSON blobs.
 type jsonDirCache struct {
 	lck sync.Mutex
 	dir string
@@ -90,7 +97,7 @@ func (jdc *jsonDirCache) UpdateCache(b BuildInfo) (err error) {
 	return json.NewEncoder(f).Encode(b)
 }
 
-// NewJSONDirCache creates a BuildCache which uses a vfs
+// NewJSONDirCache creates a BuildCache which uses a vfs.
 func NewJSONDirCache(dir string) BuildCache {
 	return &jsonDirCache{dir: dir}
 }

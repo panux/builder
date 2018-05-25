@@ -24,14 +24,14 @@ func (a ArchSet) Supports(arch Arch) bool {
 	return false
 }
 
-// Arch is an architecture
+// Arch is an architecture.
 type Arch string
 
 func (a Arch) String() string {
 	return string(a)
 }
 
-// Convert implements the makefile.Text interface
+// Convert implements the makefile.Text interface.
 func (a Arch) Convert() string {
 	if !a.Supported() {
 		panic(fmt.Errorf("invalid arch %s", a.String()))
@@ -39,17 +39,17 @@ func (a Arch) Convert() string {
 	return a.String()
 }
 
-// AutoTools returns the name used by autotools for the Arch
+// AutoTools returns the name used by autotools for the Arch.
 func (a Arch) AutoTools() string {
 	switch a {
-	case Archx86: //autotools treats x86 as "i.86"
+	case Archx86: //autotools treats x86 as "i*86"
 		return "i386"
 	default:
 		return a.String()
 	}
 }
 
-// GoArch returns the name of an arch used by Go/Kubernetes
+// GoArch returns the name of an arch used by Go/Kubernetes.
 func (a Arch) GoArch() string {
 	switch a {
 	case Archx86:
@@ -61,11 +61,11 @@ func (a Arch) GoArch() string {
 	}
 }
 
-// a86run is the set of CPU arch supported on x86_64 platforms
+// a86run is the set of CPU arch supported on x86_64 platforms.
 var a86run = []Arch{Archx86, Archx86_64}
 
-// RunsOn returns what Arch's code from this arch will run on
-// Why: 32-bit code can be built on 64-bit systems (e.g. x86 can build on x86_64)
+// RunsOn returns what Arch's code from this arch will run on.
+// Why: 32-bit code can be built on 64-bit systems (e.g. x86 can build on x86_64).
 func (a Arch) RunsOn() []Arch {
 	switch a {
 	case Archx86:
@@ -75,7 +75,7 @@ func (a Arch) RunsOn() []Arch {
 	}
 }
 
-// Supported checks if an Arch is recognized and will be processed correctly
+// Supported checks if an Arch is recognized and will be processed correctly.
 func (a Arch) Supported() bool {
 	switch a {
 	case Archx86:
@@ -86,16 +86,16 @@ func (a Arch) Supported() bool {
 	return true
 }
 
-// Arch constants
+// Arch constants.
 const (
 	Archx86_64 Arch = "x86_64"
 	Archx86    Arch = "x86"
 )
 
-// ErrUnsupportedArch is an error for an architecture that is not recognized
+// ErrUnsupportedArch is an error for an architecture that is not recognized.
 var ErrUnsupportedArch = errors.New("unsupported arch")
 
-// GetHostArch returns the arch on the host system
+// GetHostArch returns the arch on the host system.
 func GetHostArch() (Arch, error) {
 	switch runtime.GOARCH {
 	case "amd64":
@@ -107,5 +107,5 @@ func GetHostArch() (Arch, error) {
 	}
 }
 
-// SupportedArch is the set of supported Arch
+// SupportedArch is the set of supported Arch.
 var SupportedArch = ArchSet{"x86_64", "x86"}

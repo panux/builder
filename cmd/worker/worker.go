@@ -25,8 +25,10 @@ import (
 	"github.com/panux/builder/pkgen/buildlog"
 )
 
-var authk []byte //authentication public key
+// authk is the authentication public key.
+var authk []byte
 
+// ctx is the server-wide context with cancellation.
 var ctx context.Context
 
 func main() {
@@ -85,7 +87,7 @@ func main() {
 	<-ctx.Done()
 }
 
-// loadAuthKey reads an authentication key and decodes it with PEM
+// loadAuthKey reads an authentication key and decodes it with PEM.
 func loadAuthKey(path string) ([]byte, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -95,10 +97,10 @@ func loadAuthKey(path string) ([]byte, error) {
 	return blk.Bytes, nil
 }
 
-// errAccessDenied is an error indicating that the request did not have proper authentication
+// errAccessDenied is an error indicating that the request did not have proper authentication.
 var errAccessDenied = errors.New("access denied")
 
-// authReq decodes a request and checks the authentication validity
+// authReq decodes a request and checks the authentication validity.
 func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 	req, err := internal.DecodeRequest(raw, reqsub)
 	if err != nil {
@@ -110,14 +112,14 @@ func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 	return req, nil
 }
 
-// handleStatus handles Kubernetes status requests
+// handleStatus handles Kubernetes status requests.
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("online"))
 }
 
-// handleMkdir handles mkdir requests
+// handleMkdir handles mkdir requests.
 func handleMkdir(w http.ResponseWriter, r *http.Request) {
-	// check HTTP method
+	//check HTTP method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusNotImplemented)
 		return
@@ -159,7 +161,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// handleWriteFile handles a file write request
+// handleWriteFile handles a file write request.
 func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	//WaitGroup for cleanup
 	var wg sync.WaitGroup
@@ -223,7 +225,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleReadFile handles file read requests
+// handleReadFile handles file read requests.
 func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	//WaitGroup for cleanup
 	var wg sync.WaitGroup
@@ -286,12 +288,12 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, f)
 }
 
-// wsup is a websocket upgrader used by handleRunCmd
+// wsup is a websocket upgrader used by handleRunCmd.
 var wsup = &websocket.Upgrader{
 	HandshakeTimeout: time.Second * 30,
 }
 
-// handleRunCmd handles command run requests
+// handleRunCmd handles command run requests.
 func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	//upgrade request to websocket
 	c, err := wsup.Upgrade(w, r, nil)
@@ -355,7 +357,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// wsLogHandler is a buildlog.Handler used to send logs over a websocket
+// wsLogHandler is a buildlog.Handler used to send logs over a websocket.
 type wsLogHandler struct {
 	c *websocket.Conn
 }
@@ -368,7 +370,7 @@ func (wsl *wsLogHandler) Close() error {
 	return nil
 }
 
-// readWSReq reads, decodes, and authentiates a request from a websocket
+// readWSReq reads, decodes, and authentiates a request from a websocket.
 func readWSReq(c *websocket.Conn, reqsub interface{}) (*internal.Request, error) {
 	mt, r, err := c.NextReader()
 	if err != nil {

@@ -1,9 +1,9 @@
 package buildmanager
 
-// DepWalker is a function to walk a package dependency tree
+// DepWalker is a function to walk a package dependency tree.
 type DepWalker func(string) ([]string, error)
 
-// Walk walks the dependency tree
+// Walk walks the dependency tree.
 func (dw DepWalker) Walk(pkgs ...string) ([]string, error) {
 	ds := &depSet{
 		depscan: make(map[string]bool),
@@ -19,14 +19,14 @@ func (dw DepWalker) Walk(pkgs ...string) ([]string, error) {
 	return ds.lst, nil
 }
 
-// depSet is a set of dependencies used to walk dependencies
+// depSet is a set of dependencies used to walk dependencies.
 type depSet struct {
 	depscan map[string]bool
 	lst     []string
 	walker  DepWalker
 }
 
-// walk runs a recursive dependency walk
+// walk runs a recursive dependency walk.
 func (ds *depSet) walk(pkgname string) error {
 	if ds.depscan[pkgname] {
 		return nil

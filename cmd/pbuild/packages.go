@@ -11,12 +11,12 @@ import (
 	"github.com/panux/builder/pkgen/buildmanager"
 )
 
-// PackageStore is a package storage/retrieval system
+// PackageStore is a package storage/retrieval system.
 type PackageStore struct {
 	dir string
 }
 
-// genDir creates a directory if it does not already exist
+// genDir creates a directory if it does not already exist.
 func genDir(dir string) error {
 	err := os.Mkdir(dir, 0755)
 	if os.IsExist(err) {
@@ -25,7 +25,7 @@ func genDir(dir string) error {
 	return err
 }
 
-// filePath determines the path associated with the tar with the given build information
+// filePath determines the path associated with the tar with the given build information.
 func (ps *PackageStore) filePath(filename string, bi buildmanager.BuildInfo) string {
 	suf := ""
 	if bi.Bootstrap {
@@ -41,7 +41,7 @@ func (ps *PackageStore) filePath(filename string, bi buildmanager.BuildInfo) str
 	)
 }
 
-// Store attempts to store a package file (implements buildmanager.OutputHandler)
+// Store attempts to store a package file (implements buildmanager.OutputHandler).
 func (ps *PackageStore) Store(build buildmanager.BuildInfo, filename string, body io.ReadCloser) (err error) {
 	f, err := os.OpenFile(ps.filePath(filename, build), os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

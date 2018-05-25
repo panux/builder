@@ -17,7 +17,7 @@ import (
 	"github.com/panux/builder/pkgen/buildmanager"
 )
 
-// LogStream is an interface for a log reading mechanism
+// LogStream is an interface for a log reading mechanism.
 type LogStream interface {
 	// NextLine gets the next line in the log.
 	// If this is the end of the log, io.EOF will be returned.
@@ -27,7 +27,7 @@ type LogStream interface {
 	Close()
 }
 
-// LogStore is a storage directory of logs
+// LogStore is a storage directory of logs.
 type LogStore struct {
 	path string
 }
@@ -72,6 +72,7 @@ func (ls *LogStore) GetLog(bi buildmanager.BuildInfo) (log []buildlog.Line, err 
 	return log, nil
 }
 
+// arrayLogStream is a LogStream that reads from a pre-generated log in an array.
 type arrayLogStream struct {
 	log []buildlog.Line
 }
@@ -98,7 +99,7 @@ func (ls *LogStore) Stream(bi buildmanager.BuildInfo) (LogStream, error) {
 	return &arrayLogStream{log}, nil
 }
 
-// LogSession is a logging system for one build
+// LogSession is a logging system for one build.
 type LogSession struct {
 	wg        sync.WaitGroup
 	in        <-chan buildlog.Line
@@ -108,6 +109,7 @@ type LogSession struct {
 	err       error
 }
 
+// chanLogStream is a LogStream implementation using a channel to read log lines.
 type chanLogStream chan buildlog.Line
 
 func (ch chanLogStream) NextLine() (buildlog.Line, error) {
@@ -122,6 +124,7 @@ func (ch chanLogStream) Close() {
 	close(ch)
 }
 
+// trySubscribe attempts to subscribe to the *LogSession and returns whether it was successful.
 func (ls *LogSession) trySubscribe(lch chan<- buildlog.Line) bool {
 	defer recover()
 	ls.subscribe <- lch
@@ -140,14 +143,14 @@ func (ls *LogSession) Stream() (LogStream, error) {
 	return chanLogStream(lch), nil
 }
 
-//trySend tries to send a line to the channel and returns whether it was sucessful
+// trySend tries to send a line to the channel and returns whether it was sucessful.
 func trySend(line buildlog.Line, ch chan<- buildlog.Line) bool {
 	defer recover()
 	ch <- line
 	return true
 }
 
-// distributor starts the goroutine which distributes logs to clients
+// distributor starts the goroutine which distributes logs to clients.
 func (ls *LogSession) distributor() {
 	subch := make(chan chan<- buildlog.Line)
 	ls.subscribe = subch
@@ -201,7 +204,7 @@ func (ls *LogSession) distributor() {
 	}()
 }
 
-// Wait waits for the LogSession to close
+// Wait waits for the LogSession to close.
 func (ls *LogSession) Wait() {
 	ls.wg.Wait()
 }
@@ -231,14 +234,14 @@ func (lslh *logSessionLogHandler) Close() error {
 	return lslh.ls.err
 }
 
-// LogManager manages logs
+// LogManager manages logs.
 type LogManager struct {
 	lck         sync.Mutex
 	store       *LogStore
 	buildlookup map[[sha256.Size]byte]*LogSession
 }
 
-// Stream attempts to acquire a log stream
+// Stream attempts to acquire a log stream.
 func (lm *LogManager) Stream(bi buildmanager.BuildInfo) (LogStream, error) {
 	//do locking
 	lm.lck.Lock()
@@ -258,7 +261,7 @@ func (lm *LogManager) Stream(bi buildmanager.BuildInfo) (LogStream, error) {
 	return lm.store.Stream(bi)
 }
 
-// Log implements buildmanager.LogProvider
+// Log implements buildmanager.LogProvider.
 func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
 	lm.lck.Lock()
 	defer lm.lck.Unlock()
@@ -284,12 +287,18 @@ func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
 	return lh, nil
 }
 
-// ServeHTTP implements http.Handler on the LogManager
+// ServeHTTP implements http.Handler on the LogManager.
+//
 // The request takes the following query:
+//
 //		buildhash: the hexidecimal sha256 hash of the build
+//
 // The request responds with HTML5 SSE with the following message types:
+//
 //		start: indicates that event streaming has started (also sent on reconnect - starts from beginning)
+//
 //		log: contains a buildlog.Line in data
+//
 //		terminate: contains an error causing termination; EOF means that it finished streaming the log
 func (lm *LogManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//decode request
