@@ -16,6 +16,7 @@ type PackageStore struct {
 	dir string
 }
 
+// genDir creates a directory if it does not already exist
 func genDir(dir string) error {
 	err := os.Mkdir(dir, 0755)
 	if os.IsExist(err) {
@@ -24,6 +25,7 @@ func genDir(dir string) error {
 	return err
 }
 
+// filePath determines the path associated with the tar with the given build information
 func (ps *PackageStore) filePath(filename string, bi buildmanager.BuildInfo) string {
 	suf := ""
 	if bi.Bootstrap {

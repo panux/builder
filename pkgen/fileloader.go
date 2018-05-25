@@ -8,6 +8,7 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 )
 
+// fileLoader is a Loader which loads files from a vfs
 type fileLoader struct {
 	fs vfs.FileSystem
 }

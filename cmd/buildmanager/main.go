@@ -49,6 +49,7 @@ func main() {
 	}()
 	signal.Notify(sigch, syscall.SIGTERM)
 
+	//parse flags
 	var addr string
 	var namespace string
 	var authkeys string
@@ -80,7 +81,7 @@ func main() {
 		Addr: addr,
 	}
 	wg.Add(1)
-	go func() {
+	go func() { //run http server in seperate goroutine
 		defer wg.Done()
 		err := srv.ListenAndServe()
 		if err != nil {
@@ -89,9 +90,10 @@ func main() {
 		}
 	}()
 
-	<-ctx.Done()
+	<-ctx.Done() //wait for shutdown
 }
 
+// loadAuthKeys loads the authentication keys
 func loadAuthKeys(path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -104,6 +106,7 @@ func loadAuthKeys(path string) {
 	}
 }
 
+// handleStatus handles status requests
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("online"))
 }
@@ -112,6 +115,7 @@ var wsup = &websocket.Upgrader{ //websocket upgrader
 	HandshakeTimeout: time.Second * 30,
 }
 
+// handleBuild handles build requests (using websocket)
 func handleBuild(w http.ResponseWriter, r *http.Request) {
 	//upgrade to websocket
 	c, err := wsup.Upgrade(w, r, nil)
@@ -168,7 +172,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 			)
 		}
 	} else {
-		err = doBootstrap(c, work, l)
+		err = doBootstrap(ctx, c, work, l)
 	}
 	if err != nil {
 		l.Log(buildlog.Line{
@@ -263,6 +267,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// writeSourceTar copies the source tar from the client connection to the worker
 func writeSourceTar(ctx context.Context, pk *pkgen.PackageGenerator, work *worker.Worker, c *websocket.Conn) error {
 	_, r, err := c.NextReader()
 	if err != nil {
@@ -271,6 +276,7 @@ func writeSourceTar(ctx context.Context, pk *pkgen.PackageGenerator, work *worke
 	return work.WriteFile(ctx, "/root/build/src.tar", r)
 }
 
+// writeMakefile generates the Makefile and saves it onto the worker
 func writeMakefile(ctx context.Context, pk *pkgen.PackageGenerator, work *worker.Worker) error {
 	err := work.Mkdir(ctx, "/root/build", false)
 	if err != nil {
@@ -288,7 +294,8 @@ func writeMakefile(ctx context.Context, pk *pkgen.PackageGenerator, work *worker
 	return nil
 }
 
-func doBootstrap(c *websocket.Conn, work *worker.Worker, l buildlog.Handler) error {
+// doBootstrap runs the bootstrap.sh script on the worker which builds the rootfs
+func doBootstrap(ctx context.Context, c *websocket.Conn, work *worker.Worker, l buildlog.Handler) error {
 	mt, r, err := c.NextReader()
 	if err != nil {
 		return err
@@ -312,6 +319,7 @@ func doBootstrap(c *websocket.Conn, work *worker.Worker, l buildlog.Handler) err
 	return nil
 }
 
+// readWSReq reads a request from the websocket and authenticates it
 func readWSReq(c *websocket.Conn, reqsub interface{}) (*internal.Request, error) {
 	mt, r, err := c.NextReader()
 	if err != nil {
@@ -329,8 +337,10 @@ func readWSReq(c *websocket.Conn, reqsub interface{}) (*internal.Request, error)
 	return authReq(string(dat), reqsub)
 }
 
+// errAccessDenied is an error indicating that the authentication was not allowed
 var errAccessDenied = errors.New("access denied")
 
+// authReq decodes a request and checks the authentication validity
 func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 	req, err := internal.DecodeRequest(raw, reqsub)
 	if err != nil {
@@ -344,6 +354,7 @@ func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 	return nil, errAccessDenied
 }
 
+// wsLogHandler is a buildlog.Handler which sends the log over a websocket with JSON
 type wsLogHandler struct {
 	c *websocket.Conn
 }

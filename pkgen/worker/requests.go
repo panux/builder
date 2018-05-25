@@ -15,8 +15,8 @@ import (
 	"github.com/panux/builder/pkgen/buildlog"
 )
 
-//Mkdir makes a directory on the worker.
-//If mkparent is true, it will create parent directories.
+// Mkdir makes a directory on the worker.
+// If mkparent is true, it will create parent directories.
 func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/mkdir")
@@ -61,7 +61,7 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 	return
 }
 
-//reader used in WriteFile
+// fileWReader is the reader used in WriteFile
 type fileWReader struct {
 	header []byte
 	r      io.Reader
@@ -76,8 +76,8 @@ func (fwr *fileWReader) Read(dat []byte) (int, error) {
 	return n, nil
 }
 
-//WriteFile writes a file on the worker.
-//Data is copied from the io.Reader src.
+// WriteFile writes a file on the worker.
+// Data is copied from the io.Reader src.
 func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/write")
@@ -124,8 +124,8 @@ func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err
 	return
 }
 
-//ReadFile reads a file from the worker.
-//The file contents are copied into dst.
+// ReadFile reads a file from the worker.
+// The file contents are copied into dst.
 func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err error) {
 	//calculate post URL
 	u, err := w.u.Parse("/read")
@@ -169,24 +169,24 @@ func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err 
 	return
 }
 
-//CmdOptions is a set of options for running a command.
-//All fields are optional.
+// CmdOptions is a set of options for running a command.
+// All fields are optional.
 type CmdOptions struct {
-	//Env is a set of environment variables to use when running the command
+	// Env is a set of environment variables to use when running the command
 	Env map[string]string
 
-	//If DisableStdout is true then stdout will not be logged
+	// If DisableStdout is true then stdout will not be logged
 	DisableStdout bool
 
-	//If DisableStderr is true then stdout will not be logged
+	// If DisableStderr is true then stdout will not be logged
 	DisableStderr bool
 
-	//LogOut is the LogHandler used for output.
-	//Defaults to DefaultLogHandler.
+	// LogOut is the LogHandler used for output.
+	// Defaults to DefaultLogHandler.
 	LogOut buildlog.Handler
 }
 
-//set defaults where missing
+// defaults sets defaults where missing
 func (c CmdOptions) defaults() CmdOptions {
 	if c.LogOut == nil {
 		c.LogOut = buildlog.DefaultHandler
@@ -194,11 +194,11 @@ func (c CmdOptions) defaults() CmdOptions {
 	return c
 }
 
-//ErrCmdFail is an error indicating that a command failed
+// ErrCmdFail is an error indicating that a command failed
 var ErrCmdFail = errors.New("command did not report success")
 
-//RunCmd runs a command on the worker.
-//If stdin is not set then stdin will not be connected.
+// RunCmd runs a command on the worker.
+// If stdin is not set then stdin will not be connected.
 func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opts CmdOptions) (err error) {
 	//waitgroup
 	var wg sync.WaitGroup

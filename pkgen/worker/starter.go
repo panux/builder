@@ -24,14 +24,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-//Starter is a struct which starts workers
+// Starter is a struct which starts workers
 type Starter struct {
 	kcl       *kubernetes.Clientset //kubernetes Clientset to use for starting worker pods
 	namespace string                //kubernetes namespace to start pods in
 }
 
-//NewStarter returns a Starter with the given kubernetes clientset.
-//All secrets/pods are created in the specified namespace.
+// NewStarter returns a Starter with the given kubernetes clientset.
+// All secrets/pods are created in the specified namespace.
 func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
 	return &Starter{
 		kcl:       kcl,
@@ -39,7 +39,7 @@ func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
 	}
 }
 
-//Start starts a new worker using kubernetes
+// Start starts a new worker using kubernetes
 func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	//create worker pod struct
 	wpod := new(workerPod)
@@ -157,6 +157,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	}, nil
 }
 
+// genCertTmpl generates a certificate template
 func genCertTmpl() (*x509.Certificate, error) {
 	//generate random serial number
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)

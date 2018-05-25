@@ -184,6 +184,7 @@ func loadConfig(path string) {
 	}
 }
 
+// setupBMClient sets up a build manager client
 func setupBMClient() *buildmanager.Client {
 	bmurl, err := url.Parse(Config.BuildManager)
 	if err != nil {

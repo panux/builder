@@ -140,6 +140,7 @@ func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) 
 	return nil
 }
 
+// buildJob is an xgraph.Job for a build
 type buildJob struct {
 	buider       *Builder
 	pkgname      string
@@ -155,6 +156,7 @@ func (bj *buildJob) Name() string {
 	return bj.pkgname + ":" + bj.pk.BuildArch.String() + suffix
 }
 
+// pkgDeps gets a list of package rules which are dependencies
 func (bj *buildJob) pkgDeps() ([]string, error) {
 	pkfs, err := bj.buider.index.DepWalker().
 		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
@@ -177,6 +179,7 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	return pkfs, nil
 }
 
+// hash gets a hash of all of the inputs of a build
 func (bj *buildJob) hash() ([]byte, error) {
 	bleh := []string{}
 	for _, v := range bj.pk.Sources {
@@ -263,6 +266,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 	return oh.Sum(nil), nil
 }
 
+// buildInfo returns the BuildInfo for the buildJob
 func (bj *buildJob) buildInfo() (BuildInfo, error) {
 	h, err := bj.hash()
 	if err != nil {

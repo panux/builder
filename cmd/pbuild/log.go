@@ -147,6 +147,7 @@ func trySend(line buildlog.Line, ch chan<- buildlog.Line) bool {
 	return true
 }
 
+// distributor starts the goroutine which distributes logs to clients
 func (ls *LogSession) distributor() {
 	subch := make(chan chan<- buildlog.Line)
 	ls.subscribe = subch

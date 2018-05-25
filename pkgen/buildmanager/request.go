@@ -9,7 +9,7 @@ import (
 	"github.com/panux/builder/pkgen"
 )
 
-//BuildJobRequest is a thing
+// BuildJobRequest is a BuildManager request container
 type BuildJobRequest struct {
 	pk           *pkgen.PackageGenerator
 	bdeps        []string
@@ -38,6 +38,7 @@ func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget Packag
 	}, nil
 }
 
+// tar generates a tar of all of the necessary packages
 func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 	tw := tar.NewWriter(w)
 	defer func() {
@@ -96,6 +97,7 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 	return
 }
 
+// writeSourceTar writes a tar of sources
 func (bjr *BuildJobRequest) writeSourceTar(ctx context.Context, w io.Writer) error {
 	return bjr.pk.WriteSourceTar(ctx, w, bjr.loader, 100*1024*1024)
 }

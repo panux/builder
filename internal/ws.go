@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// wsReader is an io.Reader that reads from a stream of websocket readers
 type wsReader struct {
 	c *websocket.Conn
 	r io.Reader

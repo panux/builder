@@ -24,10 +24,12 @@ type BuildInfo struct {
 type BuildCache interface {
 	// CheckLatest checks if the BuildInfo matches the current version.
 	CheckLatest(BuildInfo) (bool, error)
+
 	// UpdateCache updates a cache entry for a BuildInfo
 	UpdateCache(BuildInfo) error
 }
 
+// jsonDirCache is a BuildCache which uses a dir of JSON blobs
 type jsonDirCache struct {
 	lck sync.Mutex
 	dir string

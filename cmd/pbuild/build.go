@@ -11,6 +11,7 @@ import (
 	"github.com/panux/builder/pkgen/buildmanager"
 )
 
+// parseJobName parses the name of a job into identifiers for a build
 func parseJobName(jobname string) (name string, arch pkgen.Arch, bootstrap bool) {
 	if strings.HasSuffix(jobname, "-bootstrap") {
 		bootstrap = true
@@ -74,6 +75,9 @@ func (bs *BranchStatus) ListCallback(list []string) error {
 	//generate build map
 	builds := make(map[string]*BuildStatus)
 	for _, b := range list {
+		if b == "all" {
+			continue
+		}
 		name, arch, bootstrap := parseJobName(b)
 		builds[b] = &BuildStatus{
 			Name:      name,

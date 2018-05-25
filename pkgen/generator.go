@@ -10,7 +10,7 @@ import (
 	"text/template"
 )
 
-//PackageGenerator is the preprocessed pkgen
+// PackageGenerator is the preprocessed pkgen
 type PackageGenerator struct {
 	Packages          map[string]Package `json:"packages"` //list of packages generated
 	Arch              ArchSet            `json:"arch"`     //supported architectures (any means not sys-dependent, all means it will run on all)
@@ -24,7 +24,7 @@ type PackageGenerator struct {
 	Cross             bool               `json:"cross,omitempty"`             //whether or not the package can be cross-compiled
 }
 
-//Preprocess preprocesses a RawPackageGenerator into a PackageGenerator
+// Preprocess preprocesses a RawPackageGenerator into a PackageGenerator
 func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch, bootstrap bool) (*PackageGenerator, error) {
 	pg := new(PackageGenerator)
 	pg.Packages = make(map[string]Package)
@@ -77,6 +77,7 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch, bootst
 	return pg, nil
 }
 
+// tmpl preprocesses a value with text/template
 func (rpg *RawPackageGenerator) tmpl(name string, in string, buildarch Arch, hostarch Arch) (string, error) {
 	var fnm template.FuncMap
 	fnm = template.FuncMap{
@@ -137,7 +138,7 @@ func (rpg *RawPackageGenerator) tmpl(name string, in string, buildarch Arch, hos
 	return buf.String(), nil
 }
 
-//ListPackages returns a sorted list of packages
+// ListPackages returns a sorted list of packages
 func (pg *PackageGenerator) ListPackages() []string {
 	pkl := make([]string, len(pg.Packages))
 	i := 0

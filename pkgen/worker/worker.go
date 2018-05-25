@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//Worker is a worker API client
-//It is not concurrency safe
+// Worker is a worker API client
+// It is not concurrency safe
 type Worker struct {
 	u       *url.URL          //URL of worker
 	hcl     *http.Client      //http client to use when making HTTP requests
@@ -20,7 +20,7 @@ type Worker struct {
 	pod     *workerPod        //worker pod kubernetes data
 }
 
-//Close closes a worker (killing the pod and deleting the SSL secret)
+// Close closes a worker (killing the pod and deleting the SSL secret)
 func (w *Worker) Close() error {
 	if w.pod == nil {
 		return io.ErrClosedPipe

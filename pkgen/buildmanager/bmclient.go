@@ -1,5 +1,5 @@
-//Package buildmanager is a client for the buildmanager server.
-//It can be used to build packages in the cluster.
+// Package buildmanager is a client for the buildmanager server.
+// It can be used to build packages in the cluster.
 package buildmanager
 
 import (
@@ -19,15 +19,15 @@ import (
 	"github.com/panux/builder/pkgen/buildlog"
 )
 
-//Client is a client to the buildmanager server
+// Client is a client to the buildmanager server
 type Client struct {
 	u     *url.URL
 	authk *rsa.PrivateKey
 	wscl  *websocket.Dialer
 }
 
-//NewClient creates a new Client for the server at the provided URL.
-//It uses the provided dialer, or defaults to websocket.DefaultDialer if nil.
+// NewClient creates a new Client for the server at the provided URL.
+// It uses the provided dialer, or defaults to websocket.DefaultDialer if nil.
 func NewClient(u *url.URL, auth *rsa.PrivateKey, dial *websocket.Dialer) *Client {
 	if dial == nil {
 		dial = websocket.DefaultDialer
@@ -39,22 +39,22 @@ func NewClient(u *url.URL, auth *rsa.PrivateKey, dial *websocket.Dialer) *Client
 	}
 }
 
-//BuildOptions is a set of options for Build
+// BuildOptions is a set of options for Build
 type BuildOptions struct {
-	//Out is a function which is called to write the output packages.
-	//Required.
+	// Out is a function which is called to write the output packages.
+	// Required.
 	Out func(name string, r io.Reader) error
 
-	//LogOut is the buildlog.Handler used for log output.
-	//Not closed on completion.
+	// LogOut is the buildlog.Handler used for log output.
+	// Not closed on completion.
 	LogOut buildlog.Handler
 
-	//Context is a contest for cancellation.
-	//Optional. Defaults to context.Background.
+	// Context is a contest for cancellation.
+	// Optional. Defaults to context.Background.
 	Context context.Context
 }
 
-//Status runs a status probe on the server
+// Status runs a status probe on the server
 func (cli *Client) Status() error {
 	//determine request URL
 	u, err := cli.u.Parse("/build")
@@ -79,7 +79,7 @@ func (cli *Client) Status() error {
 	return nil
 }
 
-//Build builds a package
+// Build builds a package
 func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	//determine request URL
 	u, err := cli.u.Parse("/build")
@@ -168,6 +168,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	return
 }
 
+// wsSendRequest sends a request over a websocket
 func wsSendRequest(c *websocket.Conn, r []byte) (err error) {
 	w, err := c.NextWriter(websocket.TextMessage)
 	if err != nil {
@@ -183,6 +184,7 @@ func wsSendRequest(c *websocket.Conn, r []byte) (err error) {
 	return
 }
 
+// procWsRead processes a stream of websocket reads
 func procWsRead(c *websocket.Conn, opts BuildOptions, wg *sync.WaitGroup, e *error) {
 	defer wg.Done()
 	var err error
@@ -201,6 +203,7 @@ func procWsRead(c *websocket.Conn, opts BuildOptions, wg *sync.WaitGroup, e *err
 	}
 }
 
+// wsDoRead handles a websocket read
 func wsDoRead(c *websocket.Conn, opts BuildOptions) error {
 	mt, r, err := c.NextReader()
 	if err != nil {
@@ -234,6 +237,7 @@ func wsDoRead(c *websocket.Conn, opts BuildOptions) error {
 	return nil
 }
 
+// wsSendPackages sends the packages required for the build
 func wsSendPackages(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	w, err := c.NextWriter(websocket.BinaryMessage)
 	if err != nil {
@@ -249,6 +253,7 @@ func wsSendPackages(c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	return
 }
 
+// wsSendSources sends a tar of the sources
 func wsSendSources(ctx context.Context, c *websocket.Conn, bjr *BuildJobRequest) (err error) {
 	w, err := c.NextWriter(websocket.BinaryMessage)
 	if err != nil {

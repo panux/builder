@@ -21,6 +21,7 @@ import (
 )
 
 func main() {
+	//handle server shutdown
 	stopchan := make(chan os.Signal, 1)
 	signal.Notify(stopchan, syscall.SIGTERM)
 	go func() {
@@ -28,28 +29,34 @@ func main() {
 		log.Printf("Recieved signal %q, exiting. . . \n", sig.String())
 		os.Exit(0)
 	}()
+
+	//parse flags
 	var maxbuf uint
 	var h string
 	var cachedir string
-	flag.UintVar(&maxbuf, "maxbuf", 100*1024*1024, "maximum length of data to buffer in bytes")
+	flag.UintVar(&maxbuf, "maxbuf", 500*1024*1024, "maximum length of data to buffer in bytes")
 	flag.StringVar(&h, "http", ":80", "http address to listen on")
 	flag.StringVar(&cachedir, "cache", "/srv/cache/dl", "the directory to store cached downloads in")
 	flag.Parse()
-	{
-		cdinfo, err := os.Stat(cachedir)
-		if err != nil {
-			log.Fatalf("Failed to stat %q: %q\n", cachedir, err.Error())
-		}
-		if !cdinfo.IsDir() {
-			log.Fatalf("Cache directory %q is not a directory\n", err.Error())
-		}
+
+	//check existence of cache directory
+	cdinfo, err := os.Stat(cachedir)
+	if err != nil {
+		log.Fatalf("Failed to stat %q: %q\n", cachedir, err.Error())
 	}
+	if !cdinfo.IsDir() {
+		log.Fatalf("Cache directory %q is not a directory\n", err.Error())
+	}
+
+	//prepare loader
 	loader, err := pkgen.NewMultiLoader(
 		pkgen.NewHTTPLoader(http.DefaultClient, maxbuf),
+		//add more loaders here to handle additional protocols
 	)
 	if err != nil {
 		log.Fatalf("Failed to create loader: %q\n", err.Error())
 	}
+
 	//pre-encode list of supported protocols
 	protos, err := loader.SupportedProtocols()
 	if err != nil {
@@ -62,6 +69,7 @@ func main() {
 	http.HandleFunc("/protos", func(w http.ResponseWriter, r *http.Request) {
 		io.Copy(w, bytes.NewReader(protodat))
 	})
+
 	//handle status requests
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&dlapi.Status{
@@ -69,8 +77,10 @@ func main() {
 			Version: "0.1",
 		})
 	})
+
 	//handle download requests
 	http.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request) {
+		//parse request query
 		err := r.ParseForm()
 		if err != nil {
 			http.Error(w, "failed to parse form", http.StatusBadRequest)
@@ -88,16 +98,16 @@ func main() {
 			log.Printf("Failed to parse url: %q\n", err.Error())
 			return
 		}
+
+		//check if the protocol is supported; if so goto itworks
 		for _, p := range protos {
 			if u.Scheme == p {
 				goto itworks
 			}
 		}
-		if ustr == "" {
-			http.Error(w, pkgen.ErrUnsupportedProtocol.Error(), http.StatusBadRequest)
-			return
-		}
+
 	itworks:
+
 		//generate file path
 		fp := filepath.Join(
 			cachedir,
@@ -105,7 +115,8 @@ func main() {
 				strings.Replace(u.String(), "/", "_s", -1),
 			),
 		)
-		//open file
+
+		//open cache file
 		f, err := os.OpenFile(fp, os.O_CREATE|os.O_RDWR, 0600)
 		if err != nil {
 			http.Error(w, "failed to open file", http.StatusInternalServerError)
@@ -113,12 +124,15 @@ func main() {
 			return
 		}
 		defer f.Close()
+
+		//check if cache file is new or already populated
 		inf, err := f.Stat()
 		if err != nil {
 			http.Error(w, "failed to stat file", http.StatusInternalServerError)
 			log.Printf("Failed to stat file: %q\n", err.Error())
 			return
 		}
+
 		if inf.Size() == 0 { //it is not cached - load it
 			var donesaving bool
 			defer func() {
@@ -126,9 +140,10 @@ func main() {
 					os.Remove(fp)
 				}
 			}()
-			//download
+
+			//attempt to download to cache
 			_, r, err := loader.Get(context.Background(), u)
-		dlfail:
+		dlfail: //error handling for all download errors
 			if err != nil {
 				http.Error(w, "download failure", http.StatusInternalServerError)
 				log.Printf("Failed to download %q: %q\n", u.String(), err.Error())
@@ -138,7 +153,8 @@ func main() {
 			if err != nil {
 				goto dlfail
 			}
-			//seek to beginning
+
+			//download complete - seek to beginning and sync before sending to client
 			_, err = f.Seek(0, 0)
 			if err != nil {
 				http.Error(w, "internal failure", http.StatusInternalServerError)
@@ -153,8 +169,9 @@ func main() {
 			}
 			donesaving = true
 		}
-		io.Copy(w, f) //write it out
+		io.Copy(w, f) //send file to client
 	})
+
 	//start server
 	errch := make(chan error)
 	go func() {

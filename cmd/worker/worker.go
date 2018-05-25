@@ -85,6 +85,7 @@ func main() {
 	<-ctx.Done()
 }
 
+// loadAuthKey reads an authentication key and decodes it with PEM
 func loadAuthKey(path string) ([]byte, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -94,8 +95,10 @@ func loadAuthKey(path string) ([]byte, error) {
 	return blk.Bytes, nil
 }
 
+// errAccessDenied is an error indicating that the request did not have proper authentication
 var errAccessDenied = errors.New("access denied")
 
+// authReq decodes a request and checks the authentication validity
 func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 	req, err := internal.DecodeRequest(raw, reqsub)
 	if err != nil {
@@ -107,16 +110,20 @@ func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 	return req, nil
 }
 
+// handleStatus handles Kubernetes status requests
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("online"))
 }
 
+// handleMkdir handles mkdir requests
 func handleMkdir(w http.ResponseWriter, r *http.Request) {
+	// check HTTP method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusNotImplemented)
 		return
 	}
 
+	//parse request
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("form parse error: %q", err.Error()), http.StatusBadRequest)
@@ -137,6 +144,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//execute request
 	mkreq := req.Request.(internal.MkdirRequest)
 	if mkreq.Parent {
 		err = os.MkdirAll(mkreq.Dir, 0644)
@@ -146,17 +154,24 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to mkdir: %q", err.Error()), http.StatusInternalServerError)
 	}
+
+	//write an OK
 	w.WriteHeader(http.StatusOK)
 }
+
+// handleWriteFile handles a file write request
 func handleWriteFile(w http.ResponseWriter, r *http.Request) {
+	//WaitGroup for cleanup
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
+	//check request method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusNotImplemented)
 		return
 	}
 
+	//read request
 	br := bufio.NewReader(r.Body)
 	reqdat, err := br.ReadBytes(0)
 	if err != nil {
@@ -174,6 +189,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	}
 	fwreq := req.Request.(internal.FileWriteRequest)
 
+	//open file
 	f, err := os.OpenFile(fwreq.Path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to open file: %q", err.Error()), http.StatusInternalServerError)
@@ -186,6 +202,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	//handle cancellation
 	fin := make(chan struct{})
 	defer close(fin)
 	wg.Add(1)
@@ -198,21 +215,27 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	//store file
 	_, err = io.Copy(f, r.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("write error: %q", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
+
+// handleReadFile handles file read requests
 func handleReadFile(w http.ResponseWriter, r *http.Request) {
+	//WaitGroup for cleanup
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
+	//check request method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusNotImplemented)
 		return
 	}
 
+	//parse request
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("form parse error: %q", err.Error()), http.StatusBadRequest)
@@ -234,6 +257,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	frreq := req.Request.(internal.FileReadRequest)
 
+	//open file
 	f, err := os.Open(frreq.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -245,6 +269,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
+	//handle cancellation
 	fin := make(chan struct{})
 	defer close(fin)
 	wg.Add(1)
@@ -257,26 +282,32 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	//send file
 	io.Copy(w, f)
 }
 
-var wsup = &websocket.Upgrader{ //websocket upgrader for handleRunCmd
+// wsup is a websocket upgrader used by handleRunCmd
+var wsup = &websocket.Upgrader{
 	HandshakeTimeout: time.Second * 30,
 }
 
+// handleRunCmd handles command run requests
 func handleRunCmd(w http.ResponseWriter, r *http.Request) {
+	//upgrade request to websocket
 	c, err := wsup.Upgrade(w, r, nil)
 	if err != nil {
 		return //error sent by Upgrade
 	}
 	defer c.Close()
 
+	//decode request
 	req, err := readWSReq(c, internal.CommandRequest{})
 	if err != nil {
 		return
 	}
 	cmdr := req.Request.(internal.CommandRequest)
 
+	//prepare command
 	cmd := exec.CommandContext(ctx, cmdr.Argv[0], cmdr.Argv[1:]...)
 	cmd.Dir = "/"
 	if cmdr.Env != nil {
@@ -290,6 +321,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		cmd.Env = env
 	}
 
+	//prepare logging
 	lh := buildlog.NewMutexedLogHandler(&wsLogHandler{c: c})
 	defer lh.Close()
 	if cmdr.EnableStdin {
@@ -306,8 +338,10 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		cmd.Stderr = w
 	}
 
+	//execute command
 	err = cmd.Run()
 
+	//send log termination message
 	if err != nil {
 		lh.Log(buildlog.Line{
 			Text:   fmt.Sprintf("error: %q", err.Error()),
@@ -321,6 +355,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// wsLogHandler is a buildlog.Handler used to send logs over a websocket
 type wsLogHandler struct {
 	c *websocket.Conn
 }
@@ -333,6 +368,7 @@ func (wsl *wsLogHandler) Close() error {
 	return nil
 }
 
+// readWSReq reads, decodes, and authentiates a request from a websocket
 func readWSReq(c *websocket.Conn, reqsub interface{}) (*internal.Request, error) {
 	mt, r, err := c.NextReader()
 	if err != nil {

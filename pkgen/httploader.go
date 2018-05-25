@@ -12,16 +12,19 @@ import (
 	"net/url"
 )
 
+// httpLoader is a Loader which loads data over HTTP
 type httpLoader struct {
 	cli    *http.Client
 	maxbuf uint
 }
 
+// hprotos is the set of protocols supported by httpLoader
 var hprotos = []string{"http", "https"}
 
 func (hl *httpLoader) SupportedProtocols() ([]string, error) {
 	return hprotos, nil
 }
+
 func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser, error) {
 	shasum := u.Query().Get("sha256sum")
 
@@ -86,7 +89,7 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 	return resp.ContentLength, resp.Body, nil
 }
 
-//maxReader is a reader that returns ErrExceedsMaxBuffer if too much is read
+// maxReader is a reader that returns ErrExceedsMaxBuffer if too much is read
 type maxReader struct {
 	r io.Reader
 	n uint
@@ -101,11 +104,11 @@ func (mr *maxReader) Read(dat []byte) (int, error) {
 	return n, err
 }
 
-//NewHTTPLoader returns a new Loader which loads content over HTTP
-//client is the HTTP client to use to make the requests
-//if client is nil, it will use http.DefaultClient
-//maxbuf is the maximum number of bytes to buffer in memory when necessary
-//data will only be buffered in memory when there is an attached hash
+// NewHTTPLoader returns a new Loader which loads content over HTTP
+// client is the HTTP client to use to make the requests
+// if client is nil, it will use http.DefaultClient
+// maxbuf is the maximum number of bytes to buffer in memory when necessary
+// data will only be buffered in memory when there is an attached hash
 func NewHTTPLoader(client *http.Client, maxbuf uint) Loader {
 	if client == nil {
 		client = http.DefaultClient
