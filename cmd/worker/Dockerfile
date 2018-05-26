@@ -6,10 +6,6 @@ RUN make -C busybox defconfig && \
     sed -i -e 's/# CONFIG_FEATURE_SH_STANDALONE is not set/CONFIG_FEATURE_SH_STANDALONE=y/g' busybox/.config
 RUN make -C busybox -j10 LDFLAGS="-static -s"
 
-FROM scratch as self-test
-COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox
-RUN ["busybox","sh","-c","echo hello"]
-
 FROM golang:alpine as workerbuilder
 WORKDIR /root
 RUN apk --no-cache add make git gcc libc-dev
@@ -17,7 +13,7 @@ COPY cmd/worker/worker.go /go/src/github.com/panux/builder/cmd/worker/worker.go
 COPY pkgen /go/src/github.com/panux/builder/pkgen
 COPY internal /go/src/github.com/panux/builder/internal
 RUN (cd /go/src/github.com/panux/builder/cmd/worker && go get ./...) && \
-    go build -o worker --ldflags '-linkmode external -extldflags "-static"' github.com/panux/builder/cmd/worker
+    CGO_ENABLED=0 go build -o worker github.com/panux/builder/cmd/worker
 
 FROM scratch
 COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox
