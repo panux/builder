@@ -6,7 +6,7 @@ script:
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    for i in dlserver worker buildmanager; do
+    for i in dlserver worker buildmanager pbuild; do
     docker push panux/$i;
     done;
     fi
