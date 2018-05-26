@@ -10,7 +10,7 @@
 };
 
 /* Log line hover */
-.log-line:hover {
+.log tbody tr:hover {
     background-color: grey;
 };
 

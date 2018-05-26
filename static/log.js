@@ -23,7 +23,6 @@ var lineNumber = 1;
 // lineElement returns an element which can be used in the log for the line
 function lineElement(line) {
     var tr = meh.elem('tr');
-    tr.classList.add('log-line');
 
     var numtd = meh.elem('td');
     numtd.appendChild(meh.text(lineNumber.toString()));
