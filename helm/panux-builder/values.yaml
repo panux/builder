@@ -22,4 +22,4 @@ tolerations: []
 affinity: {}
 
 # auth is a secret containing the authorization
-auth: panuxAuth
+auth: panuxauth

@@ -137,6 +137,7 @@ func main() {
 		err := bmcli.Status()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("build manager status error: %q", err.Error()), http.StatusInternalServerError)
+			log.Println("failed status probe: %q", err.Error())
 			return
 		}
 		w.Write([]byte("online"))

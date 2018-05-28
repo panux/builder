@@ -17,7 +17,7 @@ func main() {
 	var secretName string
 	var namespace string
 	var keyBits int
-	flag.StringVar(&secretName, "secret", "panuxAuth", "kubernetes secret to create")
+	flag.StringVar(&secretName, "secret", "panuxauth", "kubernetes secret to create")
 	flag.StringVar(&namespace, "namespace", "default", "kubernetes namespace to use")
 	flag.IntVar(&keyBits, "bits", 8192, "RSA key length")
 	flag.Parse()
@@ -83,10 +83,11 @@ func main() {
 	log.Println("Creating secret. . .")
 	cmd := exec.Command(
 		"kubectl", "--namespace", namespace,
-		"create", "generic", secretName,
+		"create", "secret", "generic", secretName,
 		"--from-file="+filepath.Join(dir, "authkeys.json"),
 		"--from-file="+filepath.Join(dir, "manager.pem"),
 	)
+	log.Println(cmd.Args)
 	cmd.Dir = dir
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

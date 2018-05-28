@@ -3,7 +3,7 @@
     "branches": ["beta"],
     "static": "/srv/static",
     "logs": "/srv/logs",
-    "manager": "http://buildmanager:80/",
+    "manager": "http://buildmanager/",
     "managerKey": "/srv/manager.pem",
     "cache": "/srv/cache",
     "output": "/srv/output",

@@ -44,7 +44,17 @@ spec:
               port: http
           volumeMounts:
             - name: pbuild-srv
-              mountPath: /srv
+              mountPath: /srv/logs
+              subPath: logs
+            - name: pbuild-srv
+              mountPath: /srv/cache
+              subPath: cache
+            - name: pbuild-srv
+              mountPath: /srv/output
+              subPath: output
+            - name: pbuild-srv
+              mountPath: /srv/git
+              subPath: git
             - name: pbuild-authkeys
               mountPath: /srv/manager.pem
               subPath: manager.pem
