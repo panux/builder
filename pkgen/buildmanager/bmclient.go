@@ -62,7 +62,7 @@ type BuildOptions struct {
 // Status runs a status probe on the server.
 func (cli *Client) Status() error {
 	//determine request URL
-	u, err := cli.u.Parse("/build")
+	u, err := cli.u.Parse("/status")
 	if err != nil {
 		return err
 	}
