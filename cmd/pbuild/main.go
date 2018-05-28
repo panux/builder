@@ -130,7 +130,7 @@ func main() {
 
 	//configure HTTP router
 	router := http.NewServeMux()
-	router.Handle("/api/branches", branch)
+	router.Handle("/api/branch", branch)
 	router.Handle("/api/log", logmanager)
 	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) { //status probe for Kubernetes
 		err := bmcli.Status()
