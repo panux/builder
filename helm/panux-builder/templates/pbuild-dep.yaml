@@ -31,9 +31,8 @@ spec:
           image: "{{ .Values.images.pbuild.repository }}"
           imagePullPolicy: {{ .Values.images.pbuild.pullPolicy }}
           ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
+            - containerPort: 80
+              name: http
           livenessProbe:
             httpGet:
               path: /status
