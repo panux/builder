@@ -18,7 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/jadr2ddude/xgraph"
 	"github.com/panux/builder/pkgen"
@@ -130,8 +129,8 @@ func main() {
 	}()
 
 	//configure HTTP router
-	router := mux.NewRouter()
-	router.Handle("/api/branches", branch).Methods("GET")
+	router := http.NewServeMux()
+	router.Handle("/api/branches", branch)
 	router.Handle("/api/log", logmanager)
 	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) { //status probe for Kubernetes
 		err := bmcli.Status()
