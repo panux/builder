@@ -10,10 +10,10 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: http
+    - port: 80
       targetPort: 8065
       protocol: TCP
-      name: http
+      name: 80
   selector:
     app: panux-builder-pbuild
     release: {{ .Release.Name }}
