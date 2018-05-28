@@ -18,11 +18,11 @@ spec:
       labels:
         app: panux-builder-buildmanager
         release: {{ .Release.Name }}
-    volumes:
-    - name: buildmanager-authkeys
-      secret:
-        secretName: {{ .Values.auth }}
     spec:
+      volumes:
+        - name: buildmanager-authkeys
+          secret:
+            secretName: {{ .Values.auth }}
       containers:
         - name: buildmanager
           image: "{{ .Values.images.buildmanager.repository }}"

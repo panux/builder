@@ -18,14 +18,14 @@ spec:
       labels:
         app: panux-builder-pbuild
         release: {{ .Release.Name }}
-    volumes:
-      - name: pbuild-srv
-        hostPath:
-          path: /srv/pbuild
-      - name: pbuild-authkeys
-        secret:
-          secretName: {{ .Values.auth }}
     spec:
+      volumes:
+        - name: pbuild-srv
+          hostPath:
+            path: /srv/pbuild
+        - name: pbuild-authkeys
+          secret:
+            secretName: {{ .Values.auth }}
       containers:
         - name: pbuild
           image: "{{ .Values.images.pbuild.repository }}"
