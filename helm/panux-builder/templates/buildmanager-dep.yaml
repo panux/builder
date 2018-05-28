@@ -1,0 +1,59 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: panux-builder-buildmanager
+  labels:
+    app: panux-builder-buildmanager
+    chart: {{ template "panux-builder.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: panux-builder-buildmanager
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: panux-builder-buildmanager
+        release: {{ .Release.Name }}
+    volumes:
+    - name: buildmanager-authkeys
+      secret:
+        secretName: {{ .Values.auth }}
+    spec:
+      containers:
+        - name: buildmanager
+          image: "{{ .Values.image.buildmanager.repository }}"
+          imagePullPolicy: {{ .Values.images.buildmanager.pullPolicy }}
+          volumeMounts:
+          - mountPath: /srv/authkeys.json
+            name: buildmanager-authkeys
+            subPath: authkeys.json
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: http
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

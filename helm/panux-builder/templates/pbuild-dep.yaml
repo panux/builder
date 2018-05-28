@@ -1,0 +1,64 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: panux-builder-pbuild
+  labels:
+    app: panux-builder-pbuild
+    chart: {{ template "panux-builder.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: panux-builder-pbuild
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: panux-builder-pbuild
+        release: {{ .Release.Name }}
+    volumes:
+      - name: pbuild-srv
+        hostPath:
+          path: /srv/pbuild
+      - name: pbuild-authkeys
+        secret:
+          secretName: {{ .Values.auth }}
+    spec:
+      containers:
+        - name: pbuild
+          image: "{{ .Values.image.pbuild.repository }}"
+          imagePullPolicy: {{ .Values.images.pbuild.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: http
+          volumeMounts:
+            - name: pbuild-srv
+              mountPath: /srv
+            - name: pbuild-authkeys
+              mountPath: /srv/manager.pem
+              subPath: manager.pem
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

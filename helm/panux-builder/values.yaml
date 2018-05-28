@@ -1,0 +1,25 @@
+# Default values for panux-builder.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+images:
+  buildmanager:
+    repository: panux/buildmanager
+    pullPolicy: IfNotPresent
+  pbuild:
+    repository: panux/pbuild
+    pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8065
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# auth is a secret containing the authorization
+auth: panuxAuth
