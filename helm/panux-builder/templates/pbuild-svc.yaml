@@ -13,7 +13,7 @@ spec:
     - port: 80
       targetPort: 8065
       protocol: TCP
-      name: 80
+      name: http
   selector:
     app: panux-builder-pbuild
     release: {{ .Release.Name }}
