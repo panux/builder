@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: buildmanager
-          image: "{{ .Values.image.buildmanager.repository }}"
+          image: "{{ .Values.images.buildmanager.repository }}"
           imagePullPolicy: {{ .Values.images.buildmanager.pullPolicy }}
           volumeMounts:
           - mountPath: /srv/authkeys.json

@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: pbuild
-          image: "{{ .Values.image.pbuild.repository }}"
+          image: "{{ .Values.images.pbuild.repository }}"
           imagePullPolicy: {{ .Values.images.pbuild.pullPolicy }}
           ports:
             - name: http
