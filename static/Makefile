@@ -1,5 +1,5 @@
 MATERIALIZE_VERSION = 1.0.0-beta
-MEH_JS_VERSION = v0.1
+MEH_JS_VERSION = v0.1.1
 
 all: materialize.min.js materialize.min.css meh.js meh.css
 
