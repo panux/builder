@@ -140,7 +140,12 @@ func main() {
 		}
 		w.Write([]byte("online"))
 	})
-	router.Handle("/", http.FileServer(http.Dir(Config.Static)))
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", "public")
+		w.Header().Add("Cache-Control", "max-age=60")
+		w.Header().Add("Cache-Control", "stale-if-error=120")
+		http.FileServer(http.Dir(Config.Static)).ServeHTTP(w, r)
+	})
 
 	//start HTTP server
 	server := &http.Server{
