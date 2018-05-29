@@ -57,21 +57,19 @@ type Builder struct {
 
 // genBuildJob creates a *buildJob with the given package entry, targeting the given arch.
 // If bootstrap is true, the package will be built as bootstrap.
-func (b *Builder) genBuildJob(ent *RawPkent, arch pkgen.Arch, bootstrap bool) (*buildJob, error) {
+func (b *Builder) genBuildJob(ent *RawPkent, arch pkgen.Arch, bootstrap bool) *buildJob {
 	//get name
 	name := filepath.Base(filepath.Dir(ent.Path))
 
 	//preprocess pkgen
 	pk, err := ent.Pkgen.Preprocess(arch, arch, bootstrap)
-	if err != nil {
-		return nil, err
-	}
 
 	return &buildJob{
 		buider:  b,
 		pkgname: name,
 		pk:      pk,
-	}, nil
+		err:     err,
+	}
 }
 
 // genGraph uses genBuildJob to build an xgraph of buildJobs.
@@ -82,17 +80,11 @@ func (b *Builder) genGraph() (*xgraph.Graph, []string, error) {
 		pke := b.index[name]
 		for _, arch := range b.Arch {
 			if pke.Pkgen.Arch.Supports(arch) {
-				bj, err := b.genBuildJob(pke, arch, false)
-				if err != nil {
-					return nil, nil, err
-				}
+				bj := b.genBuildJob(pke, arch, false)
 				g.AddJob(bj)
 				things = append(things, bj.Name())
 				if pke.Pkgen.Builder == "bootstrap" {
-					bj, err = b.genBuildJob(pke, arch, true)
-					if err != nil {
-						return nil, nil, err
-					}
+					bj = b.genBuildJob(pke, arch, true)
 					g.AddJob(bj)
 					things = append(things, bj.Name())
 				}
@@ -153,6 +145,9 @@ type buildJob struct {
 
 	//pk is the *pkgen.PackageGenerator being built.
 	pk *pkgen.PackageGenerator
+
+	//err is a preprocessing error
+	err error
 }
 
 func (bj *buildJob) Name() string {
@@ -165,6 +160,9 @@ func (bj *buildJob) Name() string {
 
 // pkgDeps gets a list of package rules which are dependencies.
 func (bj *buildJob) pkgDeps() ([]string, error) {
+	if bj.err != nil {
+		return nil, bj.err
+	}
 	pkfs, err := bj.buider.index.DepWalker().
 		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
 	if err != nil {
