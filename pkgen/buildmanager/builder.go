@@ -80,7 +80,7 @@ func (b *Builder) genGraph() (*xgraph.Graph, []string, error) {
 	things := []string{}
 	for _, name := range b.index.List() {
 		pke := b.index[name]
-		if pke.Pkgen == nil {
+		if pke == nil || pke.Pkgen == nil {
 			continue
 		}
 		for _, arch := range b.Arch {
