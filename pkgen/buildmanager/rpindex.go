@@ -119,8 +119,8 @@ func findPkgenV(fs vfs.FileSystem, dir string) ([]string, error) {
 				return nil, err
 			}
 			pks = append(pks, subpks...)
-		} else if filepath.Base(f.Name()) == "pkgen.yaml" {
-			pks = append(pks, f.Name())
+		} else if f.Name() == "pkgen.yaml" {
+			pks = append(pks, filepath.Join(dir, f.Name()))
 		}
 	}
 	return pks, nil
