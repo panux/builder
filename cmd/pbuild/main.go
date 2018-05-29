@@ -97,7 +97,7 @@ func main() {
 			select {
 			case <-ticker.C:
 				err := repo.WithBranch(srvctx, "beta", func(ctx context.Context, source vfs.FileSystem) error {
-					(&buildmanager.Builder{
+					return (&buildmanager.Builder{
 						LogProvider:      logmanager,
 						Client:           bmcli,
 						BuildCache:       bcache,
@@ -110,10 +110,9 @@ func main() {
 						EventHandler:     branch,
 						InfoCallback:     branch.infoCallback,
 					}).Build(ctx, branch.ListCallback)
-					return nil
 				})
 				if err != nil {
-					fmt.Printf("Failed to pull repo: %q\n", err.Error())
+					fmt.Printf("Failed to build: %q\n", err.Error())
 				}
 				cmd := exec.CommandContext(srvctx, Config.AfterBuild[0], Config.AfterBuild[1:]...)
 				cmd.Stderr = os.Stderr
