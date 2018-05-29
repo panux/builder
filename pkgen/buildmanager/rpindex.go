@@ -2,7 +2,6 @@ package buildmanager
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 
@@ -80,7 +79,7 @@ func indexEnts(ents []*RawPkent) RawPackageIndex {
 
 // loadEnt loads a package entry.
 func loadEnt(fs vfs.FileSystem, path string) (ent *RawPkent, err error) {
-	f, err := os.Open(path)
+	f, err := fs.Open(path)
 	if err != nil {
 		return
 	}
