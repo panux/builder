@@ -98,7 +98,7 @@ function start() {
     var elem = document.getElementById('list');
     var prevFinished = true;
     setInterval(() => {
-        document.getElementById('list').appendChild(meh.loadingWheel);
+        elem.appendChild(meh.loadingWheel);
 
         if(!prevFinished) {
             meh.toast(meh.text('Slow connection. Updates may be delayed.'));
@@ -106,7 +106,7 @@ function start() {
         }
         branchListGen().then(
             (l) => {
-                elem.replaceWith(l);
+                elem.childNodes[0].replaceWith(l);
                 elem = l;
             },
             () => { meh.toast(meh.text('Failed to update. Retrying soon.')); }
