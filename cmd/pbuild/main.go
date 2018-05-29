@@ -96,6 +96,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
+				log.Println("Starting build. . .")
 				err := repo.WithBranch(srvctx, "beta", func(ctx context.Context, source vfs.FileSystem) error {
 					return (&buildmanager.Builder{
 						LogProvider:      logmanager,
