@@ -152,7 +152,7 @@ type buildJob struct {
 
 func (bj *buildJob) Name() string {
 	suffix := ""
-	if bj.pk.Builder == "bootstrap" {
+	if bj.pk != nil && bj.pk.Builder == "bootstrap" {
 		suffix = "-bootstrap"
 	}
 	return bj.pkgname + ":" + bj.pk.BuildArch.String() + suffix
