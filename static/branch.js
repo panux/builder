@@ -60,6 +60,12 @@ function buildElem(buildStatus) {
 
 // branchListElem creates the build list
 function branchListElem(builds) {
+    if(builds.length == 0) {
+        var he = meh.elem('h1');
+        he.appendChild(meh.text('No builds yet!'))
+        return he;
+    }
+
     builds.sort((a, b) => {
         if(a.name != b.name) {
             return a.name > b.name ? 1 : -1;
