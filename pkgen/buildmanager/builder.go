@@ -80,6 +80,9 @@ func (b *Builder) genGraph() (*xgraph.Graph, []string, error) {
 	things := []string{}
 	for _, name := range b.index.List() {
 		pke := b.index[name]
+		if pke.Pkgen == nil {
+			continue
+		}
 		for _, arch := range b.Arch {
 			if pke.Pkgen.Arch.Supports(arch) {
 				bj := b.genBuildJob(pke, arch, false)
