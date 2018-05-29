@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/jadr2ddude/xgraph"
@@ -151,8 +153,11 @@ type buildJob struct {
 }
 
 func (bj *buildJob) Name() string {
+	if bj.pk == nil {
+		return "failed-build-" + strconv.FormatInt(rand.Int63(), 10)
+	}
 	suffix := ""
-	if bj.pk != nil && bj.pk.Builder == "bootstrap" {
+	if bj.pk.Builder == "bootstrap" {
 		suffix = "-bootstrap"
 	}
 	return bj.pkgname + ":" + bj.pk.BuildArch.String() + suffix
