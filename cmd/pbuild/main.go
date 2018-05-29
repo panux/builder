@@ -90,7 +90,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 
-		ticker := time.NewTicker(time.Minute * 5)
+		ticker := time.NewTicker(time.Minute)
 		srvstop := srvctx.Done()
 		defer ticker.Stop()
 		for {
