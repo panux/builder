@@ -86,7 +86,7 @@ function branchListGen() {
                 var builds = [];
                 (new Map(branchinfo.builds)).forEach((v) => builds.push(v));
 
-                s(buildListElem(builds));
+                s(branchListElem(builds));
             },
             f,
         );
@@ -109,7 +109,7 @@ function start() {
                 elem.replaceWith(l);
                 elem = l;
             },
-            () => meh.toast(meh.text('Failed to update. Retrying soon.'))
+            () => { meh.toast(meh.text('Failed to update. Retrying soon.')); }
         );
     }, 10000);
 }
