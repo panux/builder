@@ -203,7 +203,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 	bleh := []string{}
 	for _, v := range bj.pk.Sources {
 		if v.Scheme == "file" {
-			bleh = append(bleh, filepath.Join(filepath.Dir(bleh[0]), filepath.Clean(v.Path)))
+			bleh = append(bleh, filepath.Join(filepath.Dir(bj.buider.index[bj.pkgname].Path), filepath.Clean(v.Path)))
 		}
 	}
 	pkhs := []string{}
