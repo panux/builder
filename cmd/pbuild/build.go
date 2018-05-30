@@ -17,9 +17,9 @@ func parseJobName(jobname string) (name string, arch pkgen.Arch, bootstrap bool)
 		bootstrap = true
 		jobname = strings.TrimSuffix(jobname, "-bootstrap")
 	}
-	spl := strings.Split(jobname, "-")
-	name = strings.Join(spl[:len(spl)-1], "-")
-	arch = pkgen.Arch(spl[len(spl)-1])
+	spl := strings.Split(jobname, ":")
+	name = spl[0]
+	arch = pkgen.Arch(spl[1])
 	return name, arch, bootstrap
 }
 
