@@ -3,6 +3,7 @@ package pkgen
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/url"
 	"path/filepath"
 	"sort"
@@ -63,6 +64,9 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch, bootst
 				rpg.Builder = "default"
 			}
 		case "docker":
+		case "alpine":
+			log.Printf("Warning: alpine builder deprecated (found in package with packages [%s])\n", strings.Join(pg.ListPackages(), ","))
+			rpg.Builder = "default"
 		case "default":
 		case "panux":
 			rpg.Builder = "default"
