@@ -142,9 +142,9 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 		},
 	}
 	switch pk.Builder {
-	case "bootstrap":
+	case pkgen.BuilderBootstrap:
 		img = "panux/worker:alpine"
-	case "docker":
+	case pkgen.BuilderDocker:
 		hpt := v1.HostPathSocket
 		vols = append(vols, v1.Volume{
 			Name: "dockersock",
@@ -161,10 +161,8 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 			MountPath: "/var/run/docker.sock",
 		})
 		fallthrough
-	case "default":
+	case pkgen.BuilderDefault:
 		img = "panux/worker"
-	default:
-		return nil, fmt.Errorf("unrecognized builder: %q", pk.Builder)
 	}
 	pod := &v1.Pod{
 		Spec: v1.PodSpec{
