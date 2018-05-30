@@ -22,7 +22,7 @@ type BuildJobRequest struct {
 func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget PackageRetriever, loader pkgen.Loader) (*BuildJobRequest, error) {
 	var bdeps []string
 	var err error
-	if pk.Builder != "bootstrap" {
+	if pk.Builder.IsBootstrap() {
 		bdeps, err = dw.Walk(append(pk.BuildDependencies, "base-build")...)
 		if err != nil {
 			return nil, err

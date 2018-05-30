@@ -3,7 +3,6 @@ package pkgen
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/url"
 	"path/filepath"
 	"sort"
@@ -21,7 +20,7 @@ type PackageGenerator struct {
 	Sources           []*url.URL         `json:"sources,omitempty"`           //list of source URLs
 	Script            []string           `json:"script,omitempty"`            //script for building
 	BuildDependencies []string           `json:"buildDependencies,omitempty"` //build dependencies
-	Builder           string             `json:"builder"`                     //builder (bootstrap, docker, default)
+	Builder           Builder            `json:"builder"`                     //builder (bootstrap, docker, default)
 	Cross             bool               `json:"cross,omitempty"`             //whether or not the package can be cross-compiled
 }
 
@@ -57,25 +56,12 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch, bootst
 	}
 	pg.Script = strings.Split(script, "\n")
 	pg.BuildDependencies = rpg.BuildDependencies
-	if rpg.Builder != "" {
-		switch rpg.Builder {
-		case "bootstrap":
-			if !bootstrap {
-				rpg.Builder = "default"
-			}
-		case "docker":
-		case "alpine":
-			log.Printf("Warning: alpine builder deprecated (found in package with packages [%s])\n", strings.Join(pg.ListPackages(), ","))
-			rpg.Builder = "default"
-		case "default":
-		case "panux":
-			rpg.Builder = "default"
-		default:
-			return nil, fmt.Errorf("pkgen: invalid builder %q", rpg.Builder)
-		}
-		pg.Builder = rpg.Builder
-	} else {
-		pg.Builder = "default"
+	pg.Builder, err = ParseBuilder(rpg.Builder)
+	if err != nil {
+		return nil, err
+	}
+	if pg.Builder.IsBootstrap() && !bootstrap {
+		pg.Builder = BuilderDefault
 	}
 	pg.Cross = rpg.Cross
 	return pg, nil

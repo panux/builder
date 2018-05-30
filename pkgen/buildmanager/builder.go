@@ -93,7 +93,7 @@ func (b *Builder) genGraph() (*xgraph.Graph, []string, error) {
 				bj := b.genBuildJob(pke, arch, false)
 				g.AddJob(bj)
 				things = append(things, bj.Name())
-				if pke.Pkgen.Builder == "bootstrap" {
+				if pkgen.Builder(pke.Pkgen.Builder).IsBootstrap() {
 					bj = b.genBuildJob(pke, arch, true)
 					g.AddJob(bj)
 					things = append(things, bj.Name())
@@ -166,7 +166,7 @@ func (bj *buildJob) Name() string {
 		return "failed-build-" + strconv.FormatInt(rand.Int63(), 10)
 	}
 	suffix := ""
-	if bj.pk.Builder == "bootstrap" {
+	if bj.pk.Builder.IsBootstrap() {
 		suffix = "-bootstrap"
 	}
 	return bj.pkgname + ":" + bj.pk.BuildArch.String() + suffix
@@ -207,7 +207,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 		}
 	}
 	pkhs := []string{}
-	if bj.pk.Builder != "bootstrap" {
+	if bj.pk.Builder.IsBootstrap() {
 		pkfs, err := bj.pkgDeps()
 		if err != nil {
 			return nil, err
@@ -297,7 +297,7 @@ func (bj *buildJob) buildInfo() (BuildInfo, error) {
 		PackageName: bj.pkgname,
 		Arch:        bj.pk.BuildArch,
 		Hash:        sh,
-		Bootstrap:   bj.pk.Builder == "bootstrap",
+		Bootstrap:   bj.pk.Builder.IsBootstrap(),
 	}, nil
 }
 
@@ -314,7 +314,7 @@ func (bj *buildJob) ShouldRun() (bool, error) {
 }
 
 func (bj *buildJob) Dependencies() ([]string, error) {
-	if bj.pk.Builder == "bootstrap" {
+	if bj.pk.Builder.IsBootstrap() {
 		//no deps
 		return []string{}, nil
 	}
