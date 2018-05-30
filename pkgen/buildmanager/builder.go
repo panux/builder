@@ -122,6 +122,7 @@ func (b *Builder) prepRPG() error {
 // The provided context supports cancellation.
 func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
 	err := b.prepRPG()
+	log.Println(b)
 	if err != nil {
 		return err
 	}

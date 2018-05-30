@@ -5,10 +5,10 @@
 images:
   buildmanager:
     repository: panux/buildmanager
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   pbuild:
     repository: panux/pbuild
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
