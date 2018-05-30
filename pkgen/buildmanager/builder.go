@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"path/filepath"
 	"sort"
@@ -65,6 +66,9 @@ func (b *Builder) genBuildJob(ent *RawPkent, arch pkgen.Arch, bootstrap bool) *b
 
 	//preprocess pkgen
 	pk, err := ent.Pkgen.Preprocess(arch, arch, bootstrap)
+	if err != nil {
+		log.Printf("Preprocessing error for %v-%v-%v: %s\n", ent, arch, bootstrap, err.Error())
+	}
 
 	return &buildJob{
 		buider:  b,
