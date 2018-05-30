@@ -24,7 +24,7 @@ import (
 )
 
 var prettyInfo = `
-{{- range .}}{{with (preprocess false (unmarshal (fopen .))) -}}
+{{- range .}}{{with (preprocess (unmarshal (fopen .)) false) -}}
 Packages:{{range .ListPackages}} {{.}}{{end}}
 Version: {{.Version}}
 Builder: {{.Builder}}
