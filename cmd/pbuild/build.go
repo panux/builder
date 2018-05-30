@@ -46,6 +46,9 @@ func (bs *BranchStatus) updateState(job string, state BuildState) {
 	bs.lck.Lock()
 	defer bs.lck.Unlock()
 
+	if bs.Builds[job] == nil {
+		return
+	}
 	bs.Builds[job].State = state
 }
 
