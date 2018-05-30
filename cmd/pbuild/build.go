@@ -18,6 +18,9 @@ func parseJobName(jobname string) (name string, arch pkgen.Arch, bootstrap bool)
 		jobname = strings.TrimSuffix(jobname, "-bootstrap")
 	}
 	spl := strings.Split(jobname, ":")
+	if len(spl) < 2 {
+		return "fail", "", false
+	}
 	name = spl[0]
 	arch = pkgen.Arch(spl[1])
 	return name, arch, bootstrap
