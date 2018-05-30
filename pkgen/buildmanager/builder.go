@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jadr2ddude/xgraph"
 	"github.com/panux/builder/pkgen"
 	"golang.org/x/tools/godoc/vfs"
@@ -122,7 +123,7 @@ func (b *Builder) prepRPG() error {
 // The provided context supports cancellation.
 func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
 	err := b.prepRPG()
-	log.Println(b)
+	log.Println(spew.Sprint(b))
 	if err != nil {
 		return err
 	}
