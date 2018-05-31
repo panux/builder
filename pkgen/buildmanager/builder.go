@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jadr2ddude/xgraph"
 	"github.com/panux/builder/pkgen"
 	"golang.org/x/tools/godoc/vfs"
@@ -93,10 +92,14 @@ func (b *Builder) genGraph() (*xgraph.Graph, []string, error) {
 				bj := b.genBuildJob(pke, arch, false)
 				g.AddJob(bj)
 				things = append(things, bj.Name())
+				deps, _ := bj.Dependencies()
+				log.Printf("Build %q depends on %v\n", bj.Name(), deps)
 				if pkgen.Builder(pke.Pkgen.Builder).IsBootstrap() {
 					bj = b.genBuildJob(pke, arch, true)
 					g.AddJob(bj)
 					things = append(things, bj.Name())
+					deps, _ = bj.Dependencies()
+					log.Printf("Build %q depends on %v\n", bj.Name(), deps)
 				}
 			}
 		}
@@ -123,7 +126,6 @@ func (b *Builder) prepRPG() error {
 // The provided context supports cancellation.
 func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
 	err := b.prepRPG()
-	log.Println(spew.Sprint(b))
 	if err != nil {
 		return err
 	}
@@ -328,6 +330,12 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
 	if err != nil {
 		return nil, err
+	}
+	for i := range pkfs {
+		pkfs[i] += ":" + bj.pk.HostArch.String()
+		if bj.bootstrapped {
+			pkfs[i] += "-bootstrap"
+		}
 	}
 	return pkfs, nil
 }
