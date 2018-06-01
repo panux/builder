@@ -137,14 +137,17 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		ctx = context.Background()
 	}
 	//handle cancellation
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	stopch := make(chan struct{})
+	defer close(stopch)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		<-ctx.Done()
-		c.Close() //close to cancel I/O
-		cancelled = true
+		select {
+		case <-ctx.Done():
+			c.Close() //close to cancel I/O
+			cancelled = true
+		case <-stopch:
+		}
 	}()
 
 	//start processing output in background

@@ -23,7 +23,7 @@ func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget Packag
 	var bdeps []string
 	var err error
 	if pk.Builder.IsBootstrap() {
-		bdeps, err = dw.Walk(append(pk.BuildDependencies, "base-build")...)
+		bdeps, err = dw.Walk(append(pk.BuildDependencies, "build-meta")...)
 		if err != nil {
 			return nil, err
 		}
