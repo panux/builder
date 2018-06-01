@@ -53,7 +53,7 @@ func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
 		suf = "-bootstrap"
 	}
 	f, err := os.Open(filepath.Join(jdc.dir, filepath.Clean(fmt.Sprintf("%s-%s%s.json", b.PackageName, b.Arch.String(), suf))))
-	if err == os.ErrExist {
+	if os.IsNotExist(err) {
 		return true, nil
 	}
 	if err != nil {
