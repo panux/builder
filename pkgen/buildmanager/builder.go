@@ -167,6 +167,21 @@ type buildJob struct {
 	err error
 }
 
+// parseJobName parses the name of a job into identifiers for a build.
+func parseJobName(jobname string) (name string, arch pkgen.Arch, bootstrap bool) {
+	if strings.HasSuffix(jobname, "-bootstrap") {
+		bootstrap = true
+		jobname = strings.TrimSuffix(jobname, "-bootstrap")
+	}
+	spl := strings.Split(jobname, ":")
+	if len(spl) < 2 {
+		return "fail", "", false
+	}
+	name = spl[0]
+	arch = pkgen.Arch(spl[1])
+	return name, arch, bootstrap
+}
+
 func (bj *buildJob) Name() string {
 	if bj.pk == nil {
 		return "failed-build-" + strconv.FormatInt(rand.Int63(), 10)
@@ -219,14 +234,14 @@ func (bj *buildJob) hash() ([]byte, error) {
 		}
 	}
 	pkhs := []string{}
-	if bj.pk.Builder.IsBootstrap() {
+	if !bj.pk.Builder.IsBootstrap() {
 		pkfs, err := bj.pkgDeps()
 		if err != nil {
 			return nil, err
 		}
 		for i, v := range pkfs {
-			v = strings.TrimSuffix(v, "-bootstrap")
-			pkfs[i] = v
+			name, arch, bootstrap := parseJobName(v)
+			pkfs[i] = name
 		}
 		pkhs = pkfs
 	}
