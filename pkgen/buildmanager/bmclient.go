@@ -91,6 +91,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	if err != nil {
 		return
 	}
+	u.Scheme = "ws"
 
 	//prepare request
 	rdat, err := (&internal.Request{
