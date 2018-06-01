@@ -15,8 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"runtime"
-	"runtime/pprof"
 	"sync"
 	"syscall"
 	"time"
@@ -30,38 +28,6 @@ import (
 
 func main() {
 	defer log.Println("Shutdown complete")
-
-	//start cpu profiling
-	go func() {
-		f, err := os.Create("/srv/logs/cpu.pprof")
-		if err != nil {
-			panic(err)
-		}
-		err = pprof.StartCPUProfile(f)
-		if err != nil {
-			panic(err)
-		}
-	}()
-	//start mem profiling
-	go func() {
-		ticker := time.NewTicker(time.Second * 2)
-		for {
-			<-ticker.C
-			f, err := os.Create(fmt.Sprintf("/srv/logs/mem.pprof-%d", time.Now().Unix()))
-			if err != nil {
-				panic(err)
-			}
-			runtime.GC()
-			err = pprof.WriteHeapProfile(f)
-			if err != nil {
-				panic(err)
-			}
-			err = f.Close()
-			if err != nil {
-				panic(err)
-			}
-		}
-	}()
 
 	//load config
 	var configfile string

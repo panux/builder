@@ -102,11 +102,20 @@ func DecodeRequest(raw string, reqsub interface{}) (*Request, error) {
 
 	//unmarshal Request
 	req := new(Request)
-	req.Request = reqsub
 	err = json.Unmarshal(sig.Dat, req)
 	if err != nil {
 		return nil, err
 	}
+	// fix reqsub (quite hackish but I think it works)
+	subdat, err := json.Marshal(req.Request)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(subdat, reqsub)
+	if err != nil {
+		return nil, err
+	}
+	req.Request = reqsub
 
 	//check for key mismatch
 	if !bytes.Equal(req.PublicKey, sig.Key) {
