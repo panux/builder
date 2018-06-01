@@ -276,6 +276,7 @@ func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
 	lh := &logSessionLogHandler{
 		ch: lch,
 		ls: ls,
+		lm: lm,
 	}
 
 	//start distributor
