@@ -102,7 +102,7 @@
   branch = "master"
   name = "github.com/jadr2ddude/xgraph"
   packages = ["."]
-  revision = "11694fae863c0058fcbfdb084bb856fbd036a669"
+  revision = "d29df84d574e8c688eeb240aea3fae4b09823da1"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -243,7 +243,7 @@
     "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "dc6e60c1b0483cd8e94610bfacf6989fe55df091"
+  revision = "96600f7398bc365084c26dd66af8ac17130901aa"
 
 [[projects]]
   branch = "master"

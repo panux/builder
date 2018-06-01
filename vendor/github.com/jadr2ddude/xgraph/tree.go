@@ -112,11 +112,7 @@ func (tb *treeBuilder) genTree(name string) (*jTree, error) {
 	}
 	t.deps = darr
 	if len(errs) > 0 {
-		if len(errs) == 1 {
-			t.err = errs[0]
-		} else {
-			t.err = MultiError(errs)
-		}
+		t.err = errs[0]
 	}
 
 	return t, nil
@@ -162,23 +158,6 @@ func (cc *cycleChain) sub(name string) *cycleChain {
 	}
 }
 
-// appendErr adds an error to a another error
-func appendErr(err *error, e error) {
-	if e == nil {
-		return
-	}
-	if *err == nil {
-		*err = e
-		return
-	}
-	switch ee := (*err).(type) {
-	case MultiError:
-		*err = append(ee, e)
-	default:
-		*err = MultiError{ee, e}
-	}
-}
-
 // DependencyCycleError is an error indicating that there is a dependency cycle
 type DependencyCycleError []string
 
@@ -208,29 +187,15 @@ var chainRoot = &cycleChain{
 }
 
 func (tb *treeBuilder) checkCycle(parent *cycleChain, jt *jTree) error {
-	deps := jTreeNames(jt.deps)
-	cc := parent.sub(jt.name)
-	errs := []error{}
-	for _, v := range deps {
-		e := cc.check(v) //check to see if dep causes a cycle
-		if e != nil {
-			errs = append(errs, e)
-		} else { //check for cycles in dep
-			dt := tb.forest[v]
-			if dt == nil {
-				continue
-			}
-			e = tb.checkCycle(cc, dt)
-			if e != nil {
-				errs = append(errs, e)
-			}
-		}
+	if err := parent.check(jt.name); err != nil {
+		return err
 	}
-	if len(errs) > 0 {
-		if len(errs) == 1 {
-			return errs[0]
+	sub := parent.sub(jt.name)
+	for _, v := range jt.deps {
+		err := tb.checkCycle(sub, v)
+		if err != nil {
+			return err
 		}
-		return MultiError(errs)
 	}
 	return nil
 }
@@ -240,7 +205,9 @@ func (tb *treeBuilder) findCycles() []*jTree {
 	for _, v := range tb.forest {
 		err := tb.checkCycle(chainRoot, v)
 		if err != nil {
-			appendErr(&v.err, err)
+			if v.err == nil {
+				v.err = err
+			}
 			cTrees = append(cTrees, v)
 		}
 	}

@@ -30,6 +30,11 @@ spec:
         - name: pbuild
           image: "{{ .Values.images.pbuild.repository }}"
           imagePullPolicy: {{ .Values.images.pbuild.pullPolicy }}
+          resources:
+            requests:
+              memory: "80Mi"
+            limits:
+              memory: "250Mi"
           ports:
             - containerPort: 80
               name: http
