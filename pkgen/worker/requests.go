@@ -233,6 +233,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 	if err != nil {
 		return
 	}
+	u.Scheme = "wss"
 
 	//prepare request
 	rdat, err := (&internal.Request{
