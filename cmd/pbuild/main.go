@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/exec"
@@ -129,7 +130,7 @@ func main() {
 	}()
 
 	//configure HTTP router
-	router := http.NewServeMux()
+	router := http.DefaultServeMux
 	router.Handle("/api/branch", branch)
 	router.Handle("/api/log", logmanager)
 	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) { //status probe for Kubernetes

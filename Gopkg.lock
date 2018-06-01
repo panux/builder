@@ -102,7 +102,7 @@
   branch = "master"
   name = "github.com/jadr2ddude/xgraph"
   packages = ["."]
-  revision = "a2488ab186eac6c2c08084f5e9e5a6c94fb4a9e7"
+  revision = "11694fae863c0058fcbfdb084bb856fbd036a669"
 
 [[projects]]
   name = "github.com/json-iterator/go"
