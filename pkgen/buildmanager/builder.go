@@ -240,7 +240,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 			return nil, err
 		}
 		for i, v := range pkfs {
-			name, arch, bootstrap := parseJobName(v)
+			name, _, _ := parseJobName(v)
 			pkfs[i] = name
 		}
 		pkhs = pkfs
