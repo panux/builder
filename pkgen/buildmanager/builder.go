@@ -93,13 +93,17 @@ func (b *Builder) genGraph() (*xgraph.Graph, []string, error) {
 				g.AddJob(bj)
 				things = append(things, bj.Name())
 				deps, _ := bj.Dependencies()
-				log.Printf("Build %q depends on %v\n", bj.Name(), deps)
+				if deps != nil {
+					log.Printf("Build %q depends on %v\n", bj.Name(), deps)
+				}
 				if pkgen.Builder(pke.Pkgen.Builder).IsBootstrap() {
 					bj = b.genBuildJob(pke, arch, true)
 					g.AddJob(bj)
 					things = append(things, bj.Name())
 					deps, _ = bj.Dependencies()
-					log.Printf("Build %q depends on %v\n", bj.Name(), deps)
+					if deps != nil {
+						log.Printf("Build %q depends on %v\n", bj.Name(), deps)
+					}
 				}
 			}
 		}
@@ -322,8 +326,14 @@ func (bj *buildJob) ShouldRun() (bool, error) {
 }
 
 func (bj *buildJob) Dependencies() ([]string, error) {
+	if bj.pk == nil {
+		return []string{}, bj.err
+	}
 	if bj.pk.Builder.IsBootstrap() {
 		//no deps
+		return []string{}, nil
+	}
+	if bj.pkgname == "build-meta" {
 		return []string{}, nil
 	}
 	pkfs, err := bj.buider.index.DepWalker().
