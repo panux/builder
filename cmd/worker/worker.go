@@ -76,7 +76,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := srv.ListenAndServeTLS(tlskeypath, tlscertpath)
+		err := srv.ListenAndServeTLS(tlscertpath, tlskeypath)
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
 			srvcancel() //shutdown
