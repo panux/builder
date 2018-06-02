@@ -165,6 +165,9 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 		img = "panux/worker"
 	}
 	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "panux-worker",
+		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
 				v1.Container{
