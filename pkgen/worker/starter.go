@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -114,13 +113,14 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 
 	//generate tls config
 	tlsc := new(tls.Config)
+	tlsc.InsecureSkipVerify = true
 	tlsc.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 		for _, c := range rawCerts {
 			ce, err := x509.ParseCertificate(c)
 			if err != nil {
 				return err
 			}
-			if bytes.Equal(ce.Signature, ctmpl.Signature) {
+			if ce.Equal(ctmpl) {
 				return nil
 			}
 		}
