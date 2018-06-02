@@ -52,9 +52,11 @@ var ErrSuccess = errors.New("pod status is \"Succeeded\" but the pod should not 
 
 // waitStart waits for pod to start (caller must provide cancellation via context).
 func (wp *workerPod) waitStart(ctx context.Context) error {
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
 	for {
 		//update status of pod
-		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).UpdateStatus(wp.pod)
+		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).Update(wp.pod)
 		if err != nil {
 			return err
 		}
@@ -79,11 +81,8 @@ func (wp *workerPod) waitStart(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		default:
+		case <-tick.C:
 		}
-
-		//wait 5 seconds before retrying
-		time.Sleep(5 * time.Second)
 	}
 }
 
