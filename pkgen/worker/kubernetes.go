@@ -56,7 +56,7 @@ func (wp *workerPod) waitStart(ctx context.Context) error {
 	defer tick.Stop()
 	for {
 		//update status of pod
-		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).Update(wp.pod)
+		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).UpdateStatus(wp.pod)
 		if err != nil {
 			return err
 		}
