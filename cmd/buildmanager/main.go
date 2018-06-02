@@ -185,6 +185,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 			Text:   "failed",
 			Stream: buildlog.StreamMeta,
 		})
+		log.Printf("Package install failed: %q", err.Error())
 		return
 	}
 
@@ -199,6 +200,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 			Text:   "failed",
 			Stream: buildlog.StreamMeta,
 		})
+		log.Printf("Makefile generation failed: %q", err.Error())
 		return
 	}
 
@@ -213,6 +215,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 			Text:   "failed",
 			Stream: buildlog.StreamMeta,
 		})
+		log.Printf("Source tar generation failed: %q", err.Error())
 		return
 	}
 
@@ -232,6 +235,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 			Text:   "failed",
 			Stream: buildlog.StreamMeta,
 		})
+		log.Printf("Build command failed: %q", err.Error())
 		return
 	}
 
