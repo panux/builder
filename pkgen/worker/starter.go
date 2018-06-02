@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"io"
@@ -85,19 +84,15 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	//generate TLS/auth secret
 	sec := new(v1.Secret)
 	sec.Data = map[string][]byte{
-		"srvkey": []byte(base64.StdEncoding.EncodeToString(
-			pem.EncodeToMemory(&pem.Block{
-				Type:  "RSA PRIVATE KEY",
-				Bytes: x509.MarshalPKCS1PrivateKey(privkey),
-			}),
-		)),
+		"srvkey": pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(privkey),
+		}),
 		"cert": cert,
-		"auth": []byte(base64.StdEncoding.EncodeToString(
-			pem.EncodeToMemory(&pem.Block{
-				Type:  "RSA PUBLIC KEY",
-				Bytes: x509.MarshalPKCS1PublicKey(&authkey.PublicKey),
-			}),
-		)),
+		"auth": pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: x509.MarshalPKCS1PublicKey(&authkey.PublicKey),
+		}),
 	}
 	sec.GenerateName = "worker-tls"
 	sec, err = s.kcl.CoreV1().Secrets(s.namespace).Create(sec)
