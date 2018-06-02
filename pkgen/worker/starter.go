@@ -67,14 +67,14 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	if err != nil {
 		return nil, err
 	}
-	cert = pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
 	ctmpl, err = x509.ParseCertificate(cert)
 	if err != nil {
 		return nil, err
 	}
+	cert = pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
 
 	//generate RSA auth key
 	authkey, err := rsa.GenerateKey(rand.Reader, 4096)
