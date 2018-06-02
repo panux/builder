@@ -130,7 +130,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	l = &wsLogHandler{c: c}
 
 	//load request
-	req, err := readWSReq(c, internal.BuildRequest{})
+	req, err := readWSReq(c, &internal.BuildRequest{})
 	if err != nil {
 		log.Printf("failed to read build request: %q\n", err.Error())
 		l.Log(buildlog.Line{
@@ -143,7 +143,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	br := req.Request.(internal.BuildRequest)
+	br := req.Request.(*internal.BuildRequest)
 
 	//start worker
 	work, err := starter.Start(ctx, br.Pkgen)
