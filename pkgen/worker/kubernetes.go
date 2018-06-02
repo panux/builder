@@ -92,13 +92,13 @@ func (wp *workerPod) Close() error {
 	if wp.pod == nil && wp.sslsecret == nil {
 		return io.ErrClosedPipe
 	}
-	if wp.pod == nil {
+	if wp.pod != nil {
 		err := wp.closePod()
 		if err != nil {
 			return err
 		}
 	}
-	if wp.sslsecret == nil {
+	if wp.sslsecret != nil {
 		err := wp.closeSecret()
 		if err != nil {
 			return err
