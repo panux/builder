@@ -42,7 +42,7 @@ func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
 // Start starts a new worker using kubernetes.
 func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	//create worker pod struct
-	wpod := &workerPod{kcl: kcl}
+	wpod := &workerPod{kcl: s.kcl}
 	defer func() {
 		if err != nil { //cleanup pod if this failed
 			cerr := wpod.Close()
