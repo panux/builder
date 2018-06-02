@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/panux/builder/pkgen"
@@ -58,6 +59,13 @@ func (wp *workerPod) waitStart(ctx context.Context) error {
 		//update status of pod
 		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).UpdateStatus(wp.pod)
 		if err != nil {
+			if strings.Contains(err.Error(), "please apply your changes to the latest version and try again") {
+				p, err = wp.kcl.CoreV1().Pods(wp.pod.Namespace).Get(wp.pod.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				continue
+			}
 			return err
 		}
 		wp.pod = p
