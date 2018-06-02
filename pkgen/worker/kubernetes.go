@@ -185,7 +185,7 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 					ReadinessProbe: &v1.Probe{
 						Handler: v1.Handler{
 							TCPSocket: &v1.TCPSocketAction{
-								Port: intstr.FromInt(20),
+								Port: intstr.FromInt(443),
 							},
 						},
 					},
