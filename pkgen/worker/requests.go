@@ -15,6 +15,43 @@ import (
 	"github.com/panux/builder/pkgen/buildlog"
 )
 
+// Status sends a status request to the worker.
+func (w *Worker) Status(ctx context.Context) (str string, err error) {
+	//calculate get URL
+	u, err := w.u.Parse("/mkdir")
+	if err != nil {
+		return
+	}
+
+	//prepare request
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	req = req.WithContext(ctx)
+
+	//send request
+	resp, err := w.hcl.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		cerr := resp.Body.Close()
+		if cerr != nil && err == nil {
+			err = cerr
+			str = ""
+		}
+	}()
+
+	//read response
+	dat, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(dat), nil
+}
+
 // Mkdir makes a directory on the worker.
 // If mkparent is true, it will create parent directories.
 func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err error) {

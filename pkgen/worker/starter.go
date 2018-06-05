@@ -147,8 +147,8 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 		TLSClientConfig: tlsc,
 	}
 
-	//build and return Worker
-	return &Worker{
+	//build and test Worker
+	w = &Worker{
 		u: &url.URL{
 			Scheme: "https",
 			Host:   wpod.pod.Status.PodIP,
@@ -157,7 +157,13 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 		wscl:    wscl,
 		authkey: authkey,
 		pod:     wpod,
-	}, nil
+	}
+	_, err = w.Status(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 // genCertTmpl generates a certificate template.
