@@ -260,6 +260,9 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		}
 	})
 	defer func() {
+		if success {
+			err = nil
+		}
 		if err == nil && !success {
 			err = ErrCmdFail
 		}
