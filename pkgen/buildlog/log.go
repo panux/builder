@@ -85,8 +85,38 @@ var DefaultHandler = StdLogHandler(log.New(os.Stderr, "", log.LstdFlags))
 // Spawns a goroutine.
 func NewLogWriter(lh Handler, stream Stream) io.WriteCloser {
 	piper, pipew := io.Pipe()
-	go ReadLog(lh, stream, piper)
-	return pipew
+	lw := &logWriter{
+		pipew: pipew,
+	}
+	lw.doReadLog(lh, stream, piper)
+	return lw
+}
+
+type logWriter struct {
+	pipew *io.PipeWriter
+	wg    *sync.WaitGroup
+	err   error
+}
+
+func (lw *logWriter) Write(data []byte) (int, error) {
+	return lw.pipew.Write(data)
+}
+
+func (lw *logWriter) Close() error {
+	err := lw.pipew.Close()
+	if err != nil {
+		return err
+	}
+	lw.wg.Wait()
+	return lw.err
+}
+
+func (lw *logWriter) doReadLog(lh Handler, stream Stream, r io.Reader) {
+	lw.wg.Add(1)
+	go func() {
+		defer lw.wg.Done()
+		lw.err = ReadLog(lh, stream, r)
+	}()
 }
 
 // ReadLog reads a log from a reader.
