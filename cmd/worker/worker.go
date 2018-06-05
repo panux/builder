@@ -333,9 +333,11 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	//decode request
 	req, err := readWSReq(c, internal.CommandRequest{})
 	if err != nil {
+		log.Printf("bad cmd request: %q\n", err.Error())
 		return
 	}
 	cmdr := req.Request.(internal.CommandRequest)
+	log.Printf("accepted new command request: %v\n", cmdr)
 
 	//prepare command
 	cmd := exec.CommandContext(ctx, cmdr.Argv[0], cmdr.Argv[1:]...)
