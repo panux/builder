@@ -73,6 +73,9 @@ func main() {
 	srv := &http.Server{
 		Addr: addr,
 	}
+	srv2 := &http.Server{
+		Addr: ":80",
+	}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -85,11 +88,27 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := http.ListenAndServe(":80", nil)
+		err := srv2.ListenAndServe()
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
 			srvcancel() //shutdown
 		}
+	}()
+
+	//do http server shutdowns
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		sctx, _ := context.WithTimeout(context.Background(), time.Second*15)
+		srv.Shutdown(sctx)
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		sctx, _ := context.WithTimeout(context.Background(), time.Second*15)
+		srv2.Shutdown(sctx)
 	}()
 
 	//wait for server to be shut down
