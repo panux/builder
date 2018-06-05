@@ -313,7 +313,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 	}()
 
 	//write request to websocket
-	err = c.WriteMessage(websocket.BinaryMessage, rdat)
+	err = c.WriteMessage(websocket.TextMessage, rdat)
 	if err != nil {
 		return
 	}
