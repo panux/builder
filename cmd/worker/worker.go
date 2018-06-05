@@ -62,6 +62,13 @@ func main() {
 	flag.StringVar(&addr, "https", ":443", "https server port")
 	flag.Parse()
 
+	//prepare auth
+	var err error
+	authk, err = loadAuthKey(authkey)
+	if err != nil {
+		log.Fatalf("failed to load auth key: %q\n", err.Error())
+	}
+
 	//http setup
 	http.HandleFunc("/mkdir", handleMkdir)
 	http.HandleFunc("/write", handleWriteFile)
