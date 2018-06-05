@@ -107,7 +107,7 @@ func (wp *workerPod) Close() error {
 }
 
 // genPodSpec generates a Kubernetes pod spec for the worker.
-func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
+func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator, name string) (*v1.Pod, error) {
 	var img string
 	vols := []v1.Volume{
 		v1.Volume{
@@ -165,7 +165,7 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator) (*v1.Pod, error) {
 	}
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "panux-worker",
+			Name: name,
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{

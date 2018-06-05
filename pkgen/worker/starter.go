@@ -14,8 +14,10 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
+	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/gorilla/websocket"
 	"github.com/panux/builder/pkgen"
 	"k8s.io/api/core/v1"
@@ -39,6 +41,8 @@ func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
 
 // Start starts a new worker using kubernetes.
 func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Worker, err error) {
+	podname := "panux-" + strings.Replace(namesgenerator.GetRandomName(0), "_", "-", -1)
+
 	//create worker pod struct
 	wpod := &workerPod{kcl: s.kcl}
 	defer func() {
@@ -53,7 +57,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	}()
 
 	//generate TLS cert
-	ctmpl, err := genCertTmpl() //generate cert template
+	ctmpl, err := genCertTmpl(podname) //generate cert template
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	wpod.sslsecret = sec
 
 	//create pod
-	pod, err := wpod.genPodSpec(pk)
+	pod, err := wpod.genPodSpec(pk, podname)
 	if err != nil {
 		return
 	}
@@ -157,7 +161,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 }
 
 // genCertTmpl generates a certificate template.
-func genCertTmpl() (*x509.Certificate, error) {
+func genCertTmpl(name string) (*x509.Certificate, error) {
 	//generate random serial number
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
@@ -176,6 +180,7 @@ func genCertTmpl() (*x509.Certificate, error) {
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"Panux Builder"},
+			CommonName:   name,
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,
