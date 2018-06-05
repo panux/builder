@@ -362,6 +362,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 
 	//prepare logging
 	lh := buildlog.NewMutexedLogHandler(&wsLogHandler{c: c})
+	lh = buildlog.NewMultiLogHandler(lh, buildlog.DefaultHandler)
 	defer lh.Close()
 	if cmdr.EnableStdin {
 		cmd.Stdin = internal.NewWebsocketReader(c)
