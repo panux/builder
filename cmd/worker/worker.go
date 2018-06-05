@@ -343,7 +343,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		log.Printf("bad cmd request: %q\n", err.Error())
 		return
 	}
-	cmdr := req.Request.(internal.CommandRequest)
+	cmdr := req.Request.(*internal.CommandRequest)
 	log.Printf("accepted new command request: %v\n", cmdr)
 
 	//prepare command
