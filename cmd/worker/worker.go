@@ -69,7 +69,7 @@ func main() {
 	http.HandleFunc("/run", handleRunCmd)
 	http.HandleFunc("/status", handleStatus)
 
-	//run http server
+	//run http servers
 	srv := &http.Server{
 		Addr: addr,
 	}
@@ -77,6 +77,15 @@ func main() {
 	go func() {
 		defer wg.Done()
 		err := srv.ListenAndServeTLS(tlscertpath, tlskeypath)
+		if err != nil {
+			log.Printf("HTTPS server crashed: %q\n", err.Error())
+			srvcancel() //shutdown
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := http.ListenAndServe(":80", nil)
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
 			srvcancel() //shutdown

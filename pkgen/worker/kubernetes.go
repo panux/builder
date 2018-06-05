@@ -176,8 +176,9 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator, name string) (*v1.Po
 					VolumeMounts:    vmounts,
 					ReadinessProbe: &v1.Probe{
 						Handler: v1.Handler{
-							TCPSocket: &v1.TCPSocketAction{
-								Port: intstr.FromInt(443),
+							HTTPGet: &v1.HTTPGetAction{
+								Port: intstr.FromInt(80),
+								Path: "/status",
 							},
 						},
 					},
