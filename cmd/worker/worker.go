@@ -331,7 +331,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	defer c.Close()
 
 	//decode request
-	req, err := readWSReq(c, internal.CommandRequest{})
+	req, err := readWSReq(c, new(internal.CommandRequest))
 	if err != nil {
 		log.Printf("bad cmd request: %q\n", err.Error())
 		return
