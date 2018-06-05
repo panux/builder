@@ -183,3 +183,30 @@ func InterceptMeta(h Handler, callback func(string)) Handler {
 		lh: h,
 	}
 }
+
+type multiLogger []Handler
+
+func (ml multiLogger) Log(ll Line) error {
+	for _, v := range ml {
+		err := v.Log(ll)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ml multiLogger) Close() error {
+	for _, v := range ml {
+		err := v.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// NewMultiLogHandler returns a LogHandler that logs to all given handlers.
+func NewMultiLogHandler(handlers ...Handler) Handler {
+	return multiLogger(handlers)
+}
