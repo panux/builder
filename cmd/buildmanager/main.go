@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,6 +31,8 @@ var auth [][]byte
 var ctx context.Context
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	defer log.Println("Shutdown complete.")
 
 	//waitgroup for background goroutines
