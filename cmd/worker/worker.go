@@ -171,7 +171,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing request", http.StatusBadRequest)
 		return
 	}
-	req, err := authReq(reqs, internal.MkdirRequest{})
+	req, err := authReq(reqs, &internal.MkdirRequest{})
 	if err != nil {
 		if err == errAccessDenied {
 			http.Error(w, "access denied", http.StatusUnauthorized)
@@ -182,7 +182,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//execute request
-	mkreq := req.Request.(internal.MkdirRequest)
+	mkreq := req.Request.(*internal.MkdirRequest)
 	if mkreq.Parent {
 		err = os.MkdirAll(mkreq.Dir, 0644)
 	} else {
@@ -216,7 +216,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to read request", http.StatusBadRequest)
 		return
 	}
-	req, err := authReq(string(reqdat), internal.FileWriteRequest{})
+	req, err := authReq(string(reqdat), &internal.FileWriteRequest{})
 	if err != nil {
 		if err == errAccessDenied {
 			http.Error(w, "access denied", http.StatusUnauthorized)
@@ -225,7 +225,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	fwreq := req.Request.(internal.FileWriteRequest)
+	fwreq := req.Request.(*internal.FileWriteRequest)
 
 	//open file
 	f, err := os.OpenFile(fwreq.Path, os.O_CREATE|os.O_WRONLY, 0644)
@@ -284,7 +284,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing request", http.StatusBadRequest)
 		return
 	}
-	req, err := authReq(reqs, internal.FileReadRequest{})
+	req, err := authReq(reqs, &internal.FileReadRequest{})
 	if err != nil {
 		if err == errAccessDenied {
 			http.Error(w, "access denied", http.StatusUnauthorized)
@@ -293,7 +293,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	frreq := req.Request.(internal.FileReadRequest)
+	frreq := req.Request.(*internal.FileReadRequest)
 
 	//open file
 	f, err := os.Open(frreq.Path)
