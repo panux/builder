@@ -1,4 +1,4 @@
-package: .
+package: github.com/panux/builder
 import:
 - package: github.com/Masterminds/sprig
   version: v2.15.0
@@ -10,14 +10,6 @@ import:
   version: v1.2.0
 - package: github.com/jadr2ddude/sse
 - package: github.com/jadr2ddude/xgraph
-- package: github.com/panux/builder
-  subpackages:
-  - internal
-  - pkgen
-  - pkgen/buildlog
-  - pkgen/buildmanager
-  - pkgen/dlapi
-  - pkgen/worker
 - package: github.com/panux/go-makefile
 - package: github.com/urfave/cli
   version: v1.20.0
