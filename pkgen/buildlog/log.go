@@ -94,7 +94,7 @@ func NewLogWriter(lh Handler, stream Stream) io.WriteCloser {
 
 type logWriter struct {
 	pipew *io.PipeWriter
-	wg    *sync.WaitGroup
+	wg    sync.WaitGroup
 	err   error
 }
 
