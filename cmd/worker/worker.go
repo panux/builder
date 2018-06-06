@@ -156,7 +156,7 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	//check HTTP method
 	if r.Method != http.MethodPost {
-		http.Error(w, "unsupported method", http.StatusNotImplemented)
+		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -205,7 +205,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 
 	//check request method
 	if r.Method != http.MethodPost {
-		http.Error(w, "unsupported method", http.StatusNotImplemented)
+		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -269,7 +269,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 
 	//check request method
 	if r.Method != http.MethodPost {
-		http.Error(w, "unsupported method", http.StatusNotImplemented)
+		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
 		return
 	}
 
