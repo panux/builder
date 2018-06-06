@@ -131,6 +131,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	//prep logger
 	var l buildlog.Handler
 	l = &wsLogHandler{c: c}
+	l = buildlog.NewMultiLogHandler(l, buildlog.DefaultHandler)
 
 	//load request
 	req, err := readWSReq(c, &internal.BuildRequest{})
