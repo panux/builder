@@ -47,7 +47,7 @@ type Line struct {
 }
 
 func (ll Line) String() string {
-	return fmt.Sprintf("[%s] %s", ll.Stream.String(), ll.Stream.String())
+	return fmt.Sprintf("[%s] %s", ll.Stream.String(), ll.Text)
 }
 
 // Handler is an interface used for log output.
