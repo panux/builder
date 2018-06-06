@@ -288,7 +288,7 @@ func writeSourceTar(ctx context.Context, pk *pkgen.PackageGenerator, work *worke
 
 // writeMakefile generates the Makefile and saves it onto the worker.
 func writeMakefile(ctx context.Context, pk *pkgen.PackageGenerator, work *worker.Worker) error {
-	err := work.Mkdir(ctx, "/root/build", false)
+	err := work.Mkdir(ctx, "/root/build", true)
 	if err != nil {
 		return err
 	}
