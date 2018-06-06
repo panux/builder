@@ -344,7 +344,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		switch mt {
 		case websocket.CloseMessage:
 			return nil
-		case websocket.BinaryMessage:
+		case websocket.TextMessage:
 			var ll buildlog.Line
 			err = json.Unmarshal(dat, &ll)
 			if err != nil {
