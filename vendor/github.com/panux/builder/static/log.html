@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="materialize.min.css">
+        <link rel="stylesheet" type="text/css" href="meh.css">
+        <script src="materialize.min.js"></script>
+        <script src="meh.js"></script>
+        <script src="pbapi.js"></script>
+        <script src="branch.js"></script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div class="nav-wrapper">
+                    <a href="#" class="brand-logo">Panux Builds</a>
+                </div>
+            </nav>
+        </header>
+        <div class="container">
+            <div id="list">
+                <!-- back button -->
+                <p class="flow-text">
+                    <a href="/">
+                        <i class="material-icons">arrow_back</i>
+                        Back to builds
+                    </a>
+                </p>
+                <noscript>
+                    <!-- handle users who do not have JavaScript -->
+                    <p class="flow-text">This page requires JavaScript in order to function. Please enable JavaScript.</p>
+                </noscript>
+                <!-- log goes here -->
+                <table id="log" class="log hidden">
+                    <tbody id="logbody">
+                        <!-- log lines will be appended here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>

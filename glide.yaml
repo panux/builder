@@ -1,0 +1,40 @@
+package: .
+import:
+- package: github.com/Masterminds/sprig
+  version: v2.15.0
+- package: github.com/docker/docker
+  version: v17.05.0-ce-rc3
+  subpackages:
+  - pkg/namesgenerator
+- package: github.com/gorilla/websocket
+  version: v1.2.0
+- package: github.com/jadr2ddude/sse
+- package: github.com/jadr2ddude/xgraph
+- package: github.com/panux/builder
+  subpackages:
+  - internal
+  - pkgen
+  - pkgen/buildlog
+  - pkgen/buildmanager
+  - pkgen/dlapi
+  - pkgen/worker
+- package: github.com/panux/go-makefile
+- package: github.com/urfave/cli
+  version: v1.20.0
+- package: golang.org/x/tools
+  subpackages:
+  - godoc/vfs
+- package: gopkg.in/yaml.v2
+  version: v2.2.1
+- package: k8s.io/api
+  subpackages:
+  - core/v1
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/apis/meta/v1
+  - pkg/util/intstr
+- package: k8s.io/client-go
+  version: v7.0.0
+  subpackages:
+  - kubernetes
+  - rest
