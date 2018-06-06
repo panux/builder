@@ -335,7 +335,21 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return //error sent by Upgrade
 	}
-	defer c.Close()
+	defer func() {
+		cerr := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+		if cerr != nil {
+			c.Close()
+			if err == nil {
+				err = cerr
+			}
+			return
+		}
+		time.Sleep(time.Second)
+		cerr = c.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
 
 	//decode request
 	req, err := readWSReq(c, new(internal.CommandRequest))
