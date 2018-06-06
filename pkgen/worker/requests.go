@@ -35,6 +35,9 @@ func (w *Worker) Status(ctx context.Context) (str string, err error) {
 	if err != nil {
 		return "", err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New(resp.Status)
+	}
 	defer func() {
 		cerr := resp.Body.Close()
 		if cerr != nil && err == nil {
@@ -86,14 +89,21 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 	if err != nil {
 		return err
 	}
-
-	//discard response
 	defer func() {
 		cerr := resp.Body.Close()
 		if cerr != nil && err == nil {
 			err = cerr
 		}
 	}()
+	if resp.StatusCode != http.StatusOK {
+		dat, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(dat))
+	}
+
+	//discard response
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return
 }
@@ -149,14 +159,17 @@ func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err
 	if err != nil {
 		return err
 	}
-
-	//discard response
 	defer func() {
 		cerr := resp.Body.Close()
 		if cerr != nil && err == nil {
 			err = cerr
 		}
 	}()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(resp.Status)
+	}
+
+	//discard response
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return
 }
@@ -200,6 +213,9 @@ func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err 
 			err = cerr
 		}
 	}()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(resp.Status)
+	}
 
 	//copy file data
 	_, err = io.Copy(dst, resp.Body)
