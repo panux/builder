@@ -190,6 +190,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to mkdir: %q", err.Error()), http.StatusInternalServerError)
+		return
 	}
 
 	//write an OK
