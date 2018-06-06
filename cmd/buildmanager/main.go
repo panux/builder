@@ -315,6 +315,7 @@ func doBootstrap(ctx context.Context, c *websocket.Conn, work *worker.Worker, l 
 	}
 	err = work.WriteFile(ctx, "/root/pkgs.tar", r)
 	if err != nil {
+		log.Printf("failed to transfer pkgs.tar: %q", err.Error())
 		return err
 	}
 	err = work.RunCmd(
