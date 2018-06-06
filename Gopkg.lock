@@ -20,6 +20,15 @@
   version = "v1.0.1"
 
 [[projects]]
+  name = "github.com/docker/docker"
+  packages = [
+    "pkg/namesgenerator",
+    "pkg/random"
+  ]
+  revision = "092cba3727bb9b4a2f0e922cd6c0f93ea270e363"
+  version = "v1.13.1"
+
+[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -341,6 +350,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3cb11ea6c3abe3bef567edbe34ef67f72c30e5094a47b9384a908e0fb53bb3a5"
+  inputs-digest = "933b08f22b55ab49b0f253c8cc10c8d5f884accf6d4e1ca77cf7f79861702e44"
   solver-name = "gps-cdcl"
   solver-version = 1
