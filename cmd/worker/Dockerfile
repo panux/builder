@@ -9,11 +9,8 @@ RUN make -C busybox -j10 LDFLAGS="-static -s"
 FROM golang:alpine as workerbuilder
 WORKDIR /root
 RUN apk --no-cache add make git gcc libc-dev
-COPY cmd/worker/worker.go /go/src/github.com/panux/builder/cmd/worker/worker.go
-COPY pkgen /go/src/github.com/panux/builder/pkgen
-COPY internal /go/src/github.com/panux/builder/internal
-RUN (cd /go/src/github.com/panux/builder/cmd/worker && go get ./...) && \
-    CGO_ENABLED=0 go build -o worker github.com/panux/builder/cmd/worker
+COPY . /go/src/github.com/panux/builder
+RUN CGO_ENABLED=0 go build -o worker github.com/panux/builder/cmd/worker
 
 FROM scratch
 COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox
