@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -18,7 +19,7 @@ import (
 // Status sends a status request to the worker.
 func (w *Worker) Status(ctx context.Context) (str string, err error) {
 	//calculate get URL
-	u, err := w.u.Parse("/status")
+	u, err := w.u.Parse("/mkdir")
 	if err != nil {
 		return
 	}
@@ -77,14 +78,14 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 	}
 
 	//send post request
-	req, err := http.NewRequest(http.MethodPost, u.String(), nil)
+	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(url.Values{
+		"request": []string{string(rdat)},
+	}.Encode()))
 	if err != nil {
 		return err
 	}
 	req = req.WithContext(ctx)
-	req.Form = url.Values{
-		"request": []string{string(rdat)},
-	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := w.hcl.Do(req)
 	if err != nil {
 		return err
@@ -195,14 +196,14 @@ func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err 
 	}
 
 	//send post request
-	req, err := http.NewRequest(http.MethodPost, u.String(), nil)
+	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(url.Values{
+		"request": []string{string(rdat)},
+	}.Encode()))
 	if err != nil {
 		return err
 	}
 	req = req.WithContext(ctx)
-	req.Form = url.Values{
-		"request": []string{string(rdat)},
-	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := w.hcl.Do(req)
 	if err != nil {
 		return
