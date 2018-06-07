@@ -157,6 +157,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	//check HTTP method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
+		log.Println("mkdir: unsupported method")
 		return
 	}
 
@@ -164,11 +165,12 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("form parse error: %q", err.Error()), http.StatusBadRequest)
+		log.Printf("mkdir form parse error: %q\n", err.Error())
 		return
 	}
 	reqs := r.FormValue("request")
 	if reqs == "" {
-		http.Error(w, "missing request", http.StatusBadRequest)
+		http.Error(w, "mkdir: missing request", http.StatusBadRequest)
 		return
 	}
 	req, err := authReq(reqs, &internal.MkdirRequest{})
@@ -178,6 +180,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, fmt.Sprintf("failed to decode request: %q", err.Error()), http.StatusBadRequest)
 		}
+		log.Printf("mkdir: request error: %q\n", err.Error())
 		return
 	}
 
@@ -206,6 +209,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	//check request method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
+		log.Println("writeFile: unsupported method")
 		return
 	}
 
@@ -214,6 +218,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	reqdat, err := br.ReadBytes(0)
 	if err != nil {
 		http.Error(w, "failed to read request", http.StatusBadRequest)
+		log.Printf("writeFile failed to read request: %q\n", err.Error())
 		return
 	}
 	req, err := authReq(string(reqdat), &internal.FileWriteRequest{})
@@ -223,6 +228,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, fmt.Sprintf("failed to decode request: %q", err.Error()), http.StatusBadRequest)
 		}
+		log.Printf("writeFile failed to decode request: %q\n", err.Error())
 		return
 	}
 	fwreq := req.Request.(*internal.FileWriteRequest)
@@ -270,6 +276,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	//check request method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
+		log.Println("readFile unsupported method")
 		return
 	}
 
@@ -277,11 +284,13 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("form parse error: %q", err.Error()), http.StatusBadRequest)
+		log.Printf("readFile form parse error: %q\n", err.Error())
 		return
 	}
 	reqs := r.FormValue("request")
 	if reqs == "" {
 		http.Error(w, "missing request", http.StatusBadRequest)
+		log.Println("missing request")
 		return
 	}
 	req, err := authReq(reqs, &internal.FileReadRequest{})
@@ -291,6 +300,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, fmt.Sprintf("failed to decode request: %q", err.Error()), http.StatusBadRequest)
 		}
+		log.Printf("readFile request error: %q\n", err.Error())
 		return
 	}
 	frreq := req.Request.(*internal.FileReadRequest)
@@ -303,6 +313,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, fmt.Sprintf("failed to open file: %q", err.Error()), http.StatusInternalServerError)
 		}
+		log.Printf("readFile file open error: %q\n", err.Error())
 		return
 	}
 	defer f.Close()
