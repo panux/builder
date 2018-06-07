@@ -221,6 +221,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("writeFile failed to read request: %q\n", err.Error())
 		return
 	}
+	reqdat = reqdat[:len(reqdat)-1]
 	req, err := authReq(string(reqdat), &internal.FileWriteRequest{})
 	if err != nil {
 		if err == errAccessDenied {
