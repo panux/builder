@@ -19,7 +19,7 @@ import (
 // Status sends a status request to the worker.
 func (w *Worker) Status(ctx context.Context) (str string, err error) {
 	//calculate get URL
-	u, err := w.u.Parse("/mkdir")
+	u, err := w.u.Parse("/status")
 	if err != nil {
 		return
 	}
