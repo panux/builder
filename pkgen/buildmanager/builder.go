@@ -195,9 +195,6 @@ func (bj *buildJob) Name() string {
 
 // pkgDeps gets a list of package rules which are dependencies.
 func (bj *buildJob) pkgDeps() ([]string, error) {
-	if bj.pkgname == "build-meta" {
-		return []string{}, nil
-	}
 	if bj.err != nil {
 		return nil, bj.err
 	}
@@ -346,9 +343,6 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 	}
 	if bj.pk.Builder.IsBootstrap() {
 		//no deps
-		return []string{}, nil
-	}
-	if bj.pkgname == "build-meta" {
 		return []string{}, nil
 	}
 	pkfs, err := bj.buider.index.DepWalker().
