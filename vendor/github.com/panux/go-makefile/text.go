@@ -44,6 +44,7 @@ func (fp FilePath) CheckValid() error {
 		case c == '-':
 		case c == '.':
 		case c == '\\':
+		case c == '+':
 		case c == '/':
 		default:
 			return ErrIllegalRune{
