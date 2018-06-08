@@ -150,6 +150,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	br := req.Request.(*internal.BuildRequest)
 
 	//start worker
+	l.Log(buildlog.Line{
+		Text:   "starting worker",
+		Stream: buildlog.StreamBuild,
+	})
 	wsctx, _ := context.WithTimeout(ctx, time.Minute)
 	work, err := starter.Start(wsctx, br.Pkgen)
 	if err != nil {
@@ -165,6 +169,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	//install packages
+	l.Log(buildlog.Line{
+		Text:   "installing packages",
+		Stream: buildlog.StreamBuild,
+	})
 	if br.Pkgen.Builder == "bootstrap" {
 		if br.Pkgen.BuildDependencies != nil {
 			err = work.RunCmd(
@@ -194,6 +202,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//write makefile
+	l.Log(buildlog.Line{
+		Text:   "generating makefile",
+		Stream: buildlog.StreamBuild,
+	})
 	err = writeMakefile(ctx, br.Pkgen, work)
 	if err != nil {
 		l.Log(buildlog.Line{
@@ -209,6 +221,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send source tarball
+	l.Log(buildlog.Line{
+		Text:   "loading sources",
+		Stream: buildlog.StreamBuild,
+	})
 	err = writeSourceTar(ctx, br.Pkgen, work, c)
 	if err != nil {
 		l.Log(buildlog.Line{
@@ -224,6 +240,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//run build
+	l.Log(buildlog.Line{
+		Text:   "executing build",
+		Stream: buildlog.StreamBuild,
+	})
 	err = work.RunCmd(
 		ctx,
 		[]string{"make", "-C", "/root/build", "pkgs.tar"},
@@ -244,6 +264,10 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send packages back
+	l.Log(buildlog.Line{
+		Text:   "uploading packages",
+		Stream: buildlog.StreamBuild,
+	})
 	pw, err := c.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		log.Printf("Oh shoot, failed to send packages back: %q\n", err.Error())
