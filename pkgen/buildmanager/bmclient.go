@@ -161,7 +161,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	}
 
 	//send packages
-	if bjr.pk.Builder.IsBootstrap() {
+	if !bjr.pk.Builder.IsBootstrap() {
 		err = wsSendPackages(c, bjr)
 		if err != nil {
 			return
