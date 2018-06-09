@@ -266,9 +266,12 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 
 	//check for success message
 	var builderr error
+	var success bool
 	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
 		if s != "success" { //forward error to build and return err
 			builderr = errors.New(s)
+		} else {
+			success = true
 		}
 	})
 	defer func() {
@@ -278,6 +281,9 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 				Stream: buildlog.StreamBuild,
 			})
 			err = builderr
+		}
+		if success {
+			err = ErrCmdFail
 		}
 	}()
 
