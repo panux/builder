@@ -16,10 +16,11 @@ type BuildJobRequest struct {
 	pgetter      PackageRetriever
 	loader       pkgen.Loader
 	bootstrapped bool
+	b            *Builder
 }
 
 // CreateBuildJobRequest creates a new BuildJobRequest.
-func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget PackageRetriever, loader pkgen.Loader) (*BuildJobRequest, error) {
+func (b *Builder) CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget PackageRetriever, loader pkgen.Loader) (*BuildJobRequest, error) {
 	var bdeps []string
 	var err error
 	if !pk.Builder.IsBootstrap() {
@@ -35,6 +36,7 @@ func CreateBuildJobRequest(pk *pkgen.PackageGenerator, dw DepWalker, pget Packag
 		bdeps:   bdeps,
 		pgetter: pget,
 		loader:  loader,
+		b:       b,
 	}, nil
 }
 
@@ -51,7 +53,7 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 		var l uint32
 		var r io.ReadCloser
 		var ext string
-		l, r, ext, err = bjr.pgetter.GetPkg(d, bjr.pk.HostArch, bjr.bootstrapped)
+		l, r, ext, err = bjr.pgetter.GetPkg(d, bjr.pk.HostArch, bjr.b.index[d].Pkgen.Builder == "bootstrap")
 		if err != nil {
 			return
 		}

@@ -214,14 +214,6 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 			i++
 		}
 	}
-	for i, v := range pkfs {
-		pkfs[i] = v + ":" + bj.pk.HostArch.String()
-	}
-	if bj.bootstrapped {
-		for i, v := range pkfs {
-			pkfs[i] = v + "-bootstrap"
-		}
-	}
 	return pkfs, nil
 }
 
@@ -238,10 +230,6 @@ func (bj *buildJob) hash() ([]byte, error) {
 		pkfs, err := bj.pkgDeps()
 		if err != nil {
 			return nil, err
-		}
-		for i, v := range pkfs {
-			name, _, _ := parseJobName(v)
-			pkfs[i] = name
 		}
 		pkhs = pkfs
 	}
@@ -274,7 +262,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 		ent := &blents[i+len(bleh)]
 		err := func() (err error) {
 			ent.Name = v
-			_, r, ext, err := bj.buider.PackageRetriever.GetPkg(v, bj.pk.BuildArch, bj.bootstrapped)
+			_, r, ext, err := bj.buider.PackageRetriever.GetPkg(v, bj.pk.BuildArch, bj.buider.index[v].Pkgen.Builder == "bootstrap")
 			if err != nil {
 				return err
 			}
@@ -355,8 +343,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 		//no deps
 		return []string{}, nil
 	}
-	pkfs, err := bj.buider.index.DepWalker().
-		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
+	pkfs, err := bj.pkgDeps()
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +383,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	}
 
 	//create the BuildJobRequest
-	bjr, err := CreateBuildJobRequest(bj.pk, bj.buider.index.DepWalker(), bj.buider.PackageRetriever, load)
+	bjr, err := bj.buider.CreateBuildJobRequest(bj.pk, bj.buider.index.DepWalker(), bj.buider.PackageRetriever, load)
 	if err != nil {
 		return err
 	}
