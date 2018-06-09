@@ -337,7 +337,14 @@ func (bj *buildJob) ShouldRun() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return bj.buider.BuildCache.CheckLatest(bi)
+	il, err := bj.buider.BuildCache.CheckLatest(bi)
+	if err != nil {
+		return false, err
+	}
+	if il {
+		log.Printf("Caching build %q\n", bj.Name())
+	}
+	return !il, nil
 }
 
 func (bj *buildJob) Dependencies() ([]string, error) {
