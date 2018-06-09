@@ -54,7 +54,7 @@ func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
 	}
 	f, err := os.Open(filepath.Join(jdc.dir, filepath.Clean(fmt.Sprintf("%s-%s%s.json", b.PackageName, b.Arch.String(), suf))))
 	if os.IsNotExist(err) {
-		return true, nil
+		return false, nil
 	}
 	if err != nil {
 		return false, err
