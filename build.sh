@@ -1,7 +1,5 @@
 #!/bin/sh
 set -e
 
-for i in dlserver worker buildmanager pbuild; do
-    scripts/dbuild.sh "$i"
-done
-echo Build done!
+docker build -t panux/builderbuilder -f scripts/Dockerfile .
+docker run -it -v /var/run/docker.sock:/var/run/docker.sock panux/builderbuilder

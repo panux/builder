@@ -6,14 +6,8 @@ RUN make -C busybox defconfig && \
     sed -i -e 's/# CONFIG_FEATURE_SH_STANDALONE is not set/CONFIG_FEATURE_SH_STANDALONE=y/g' busybox/.config
 RUN make -C busybox -j10 LDFLAGS="-static -s"
 
-FROM golang:alpine as workerbuilder
-WORKDIR /root
-RUN apk --no-cache add make git gcc libc-dev
-COPY . /go/src/github.com/panux/builder
-RUN CGO_ENABLED=0 go build -o worker github.com/panux/builder/cmd/worker
-
 FROM scratch
 COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox
-COPY --from=workerbuilder /root/worker /usr/bin/worker
+COPY worker /usr/bin/worker
 COPY cmd/worker/bootstrap.sh /root/bootstrap.sh
 ENTRYPOINT ["worker"]
