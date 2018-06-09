@@ -175,6 +175,11 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	})
 	if br.Pkgen.Builder == "bootstrap" {
 		if br.Pkgen.BuildDependencies != nil {
+			for i, v := range br.Pkgen.BuildDependencies {
+				if v == "libstdc++-dev" {
+					br.Pkgen.BuildDependencies[i] = "g++"
+				}
+			}
 			err = work.RunCmd(
 				ctx,
 				append(
