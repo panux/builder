@@ -283,7 +283,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 			err = builderr
 		}
 		if success {
-			err = ErrCmdFail
+			err = nil
 		}
 	}()
 
