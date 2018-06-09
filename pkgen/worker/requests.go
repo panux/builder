@@ -265,23 +265,19 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 	opts.LogOut = buildlog.NewMutexedLogHandler(opts.LogOut)
 
 	//check for success message
-	var success bool
+	var builderr error
 	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
-		if s == "success" {
-			success = true
-		} else { //forward error to stderr
-			opts.LogOut.Log(buildlog.Line{
-				Text:   s,
-				Stream: buildlog.StreamStderr,
-			})
+		if s != "success" { //forward error to build and return err
+			builderr = errors.New(s)
 		}
 	})
 	defer func() {
-		if success {
-			err = nil
-		}
-		if err == nil && !success {
-			err = ErrCmdFail
+		if builderr != nil {
+			opts.LogOut.Log(buildlog.Line{
+				Text:   "build failed",
+				Stream: buildlog.StreamBuild,
+			})
+			err = builderr
 		}
 	}()
 

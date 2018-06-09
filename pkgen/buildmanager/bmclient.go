@@ -86,6 +86,26 @@ func (cli *Client) Status() error {
 
 // Build builds a package.
 func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
+	//prep logging
+	if opts.LogOut == nil {
+		opts.LogOut = buildlog.DefaultHandler
+	}
+	var builderr error
+	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
+		if s != "success" { //forward error to build and return err
+			builderr = errors.New(s)
+		}
+	})
+	defer func() {
+		if builderr != nil {
+			opts.LogOut.Log(buildlog.Line{
+				Text:   "build failed",
+				Stream: buildlog.StreamBuild,
+			})
+			err = builderr
+		}
+	}()
+
 	//determine request URL
 	u, err := cli.u.Parse("/build")
 	if err != nil {
