@@ -361,6 +361,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 		return nil, err
 	}
 	for i := range pkfs {
+		pkfs[i] = filepath.Base(filepath.Dir(bj.buider.index[pkfs[i]].Path))
 		pkfs[i] += ":" + bj.pk.HostArch.String()
 		if bj.bootstrapped {
 			pkfs[i] += "-bootstrap"
