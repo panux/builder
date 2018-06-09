@@ -157,7 +157,7 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 	basics.NewRule(uts).
 		AddDep(mv.SrcTar.Sub()).AddDep(srct).
 		NewCmd("tar").
-		AddArg(makefile.RawText("-xf")).AddArg(makefile.Dep1).
+		AddArg(makefile.RawText("-xvf")).AddArg(makefile.Dep1).
 		AddArg(makefile.RawText("-C")).AddArg(srct)
 
 	//add script rule
