@@ -35,7 +35,7 @@ function buildElem(buildStatus) {
     var li = meh.elem('li');
     li.classList.add('collection-item');
 
-    if(buildinfo.info) {
+    if(buildStatus.info) {
         li.onclick = () => {
             pageURL.pathname = '/log.html';
             pageURL.searchParams.delete('branch');
