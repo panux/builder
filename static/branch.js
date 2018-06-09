@@ -25,7 +25,7 @@ var statusIcons = {
 
 // chip generates a Materialize chip containing the given string
 function chip(text) {
-    var d = meh.div(meh.text(text));
+    var d = meh.div([meh.text(text)]);
     d.classList.add('chip');
     return d;
 }
@@ -48,12 +48,12 @@ function buildElem(buildStatus) {
     indicator.appendChild(meh.icon(statusIcons[buildStatus.state]));
     indicator.classList.add('secondary-content');
 
-    li.appendChild(meh.div(
+    li.appendChild(meh.div([
         meh.text(buildStatus.name),
         chip(buildStatus.arch),
         buildStatus.bootstrap ? chip('bootstrap') : meh.text(''),
         indicator
-    ));
+    ]));
 
     return li;
 }
