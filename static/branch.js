@@ -90,7 +90,7 @@ function branchListGen() {
         pbapi.branchStatus(branch).then(
             (branchinfo) => {
                 var builds = [];
-                for(var v in branchinfo.builds) {
+                for(var [i, v] of (new Map(branchinfo.builds))) {
                     builds.push(v);
                 }
 
