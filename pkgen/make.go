@@ -104,7 +104,7 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 		odir := makefile.FilePath(path.Join("out", p))
 		dirRule(dirsec, odir).AddDep(ot)
 
-		//add pkginfo rule
+		//add out pkginfo rule
 		pkin := makefile.FilePath(filepath.Join("out", p, ".pkginfo"))
 		b.NewRule(pkin).
 			AddDep(
@@ -125,6 +125,10 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 			AddArg(makefile.Target).
 			SetNoPrint()
 		pkginfos.AddDep(pkin)
+
+		//add src pkginfo rule
+		b.NewRule(makefile.FilePath(filepath.Join("src", p, ".pkginfo"))).
+			AddDep(uts)
 
 		//add output tarring rule
 		tname := makefile.FilePath(fmt.Sprintf("%s.tar.gz", p))
@@ -148,12 +152,6 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 			SetNoPrint()
 		trule.AddDep(trname)
 	}
-
-	//add rule for source pkginfos
-	basics.NewRule(makefile.JoinText("/",
-		srct,
-		makefile.ExtPattern("pkginfo"),
-	)).AddDep(uts)
 
 	//add rule to un-tar source
 	basics.NewRule(uts).
