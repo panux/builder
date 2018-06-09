@@ -363,7 +363,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 	for i := range pkfs {
 		pkfs[i] = filepath.Base(filepath.Dir(bj.buider.index[pkfs[i]].Path))
 		pkfs[i] += ":" + bj.pk.HostArch.String()
-		if bj.buider.index[pkfs[i]].Pkgen.Builder == "bootstrap" {
+		if bj.buider.index[pkfs[i]].Pkgen != nil && bj.buider.index[pkfs[i]].Pkgen.Builder == "bootstrap" {
 			pkfs[i] += "-bootstrap"
 		}
 	}
