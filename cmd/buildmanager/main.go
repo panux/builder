@@ -246,7 +246,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	})
 	err = work.RunCmd(
 		ctx,
-		[]string{"make", "-C", "/root/build", "pkgs.tar"},
+		[]string{"make", "-j4", "-C", "/root/build", "pkgs.tar"},
 		nil,
 		worker.CmdOptions{LogOut: l},
 	)
