@@ -394,12 +394,27 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	}()
 
 	//run build
-	return bj.buider.Client.Build(bjr, BuildOptions{
+	err = bj.buider.Client.Build(bjr, BuildOptions{
 		Out: func(name string, r io.Reader) error {
 			return bj.buider.Output.Store(inf, name, ioutil.NopCloser(r))
 		},
 		LogOut: log,
 	})
+	if err != nil {
+		return err
+	}
+
+	//store cache
+	bi, err := bj.buildInfo()
+	if err != nil {
+		return err
+	}
+	err = bj.buider.BuildCache.UpdateCache(bi)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // OutputHandler is an interface to handle the output of builds.
