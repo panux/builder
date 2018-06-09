@@ -368,7 +368,22 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 			pkfs[i] += "-bootstrap"
 		}
 	}
+	pkfs = dedup(pkfs)
 	return pkfs, nil
+}
+
+func dedup(in []string) []string {
+	m := make(map[string]struct{})
+	for _, v := range in {
+		m[v] = struct{}{}
+	}
+	o := make([]string, len(m))
+	i := 0
+	for v := range m {
+		o[i] = v
+		i++
+	}
+	return o
 }
 
 func (bj *buildJob) Run(ctx context.Context) (err error) {
