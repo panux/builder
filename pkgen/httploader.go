@@ -96,7 +96,7 @@ type maxReader struct {
 }
 
 func (mr *maxReader) Read(dat []byte) (int, error) {
-	n, err := mr.Read(dat)
+	n, err := mr.r.Read(dat)
 	if uint(n) > mr.n {
 		return n, ErrExceedsMaxBuffer
 	}
