@@ -25,7 +25,7 @@ var statusIcons = {
 
 // chip generates a Materialize chip containing the given string
 function chip(text) {
-    var d = meh.div(meh.text(arch));
+    var d = meh.div(meh.text(text));
     d.classList.add('chip');
     return d;
 }
@@ -39,7 +39,7 @@ function buildElem(buildStatus) {
         li.onclick = () => {
             pageURL.pathname = '/log.html';
             pageURL.searchParams.delete('branch');
-            pageURL.searchParams.set('buildHash', buildStatus.info.hash);
+            pageURL.searchParams.set('buildHash', btoa(Array.prototype.map.call(buildStatus.info.hash, (v) => {return String.fromCharCode(v);}).join('')));
             window.location.assign(pageURL.toString());
         };
     }
