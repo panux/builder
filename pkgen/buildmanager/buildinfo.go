@@ -82,7 +82,7 @@ func (jdc *jsonDirCache) UpdateCache(b BuildInfo) (err error) {
 	if b.Bootstrap {
 		suf = "-bootstrap"
 	}
-	f, err := os.OpenFile(filepath.Join(jdc.dir, filepath.Clean(fmt.Sprintf("%s-%s%s.json", b.PackageName, b.Arch.String(), suf))), os.O_WRONLY|os.O_TRUNC, 0600)
+	f, err := os.Create(filepath.Join(jdc.dir, filepath.Clean(fmt.Sprintf("%s-%s%s.json", b.PackageName, b.Arch.String(), suf))))
 	if err != nil {
 		return err
 	}
