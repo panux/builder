@@ -198,6 +198,9 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	if bj.err != nil {
 		return nil, bj.err
 	}
+	if bj.pk.Builder.IsBootstrap() {
+		return []string{}, nil
+	}
 	pkfs, err := bj.buider.index.DepWalker().
 		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
 	if err != nil {
