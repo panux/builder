@@ -127,7 +127,7 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 		pkginfos.AddDep(pkin)
 
 		//add src pkginfo rule
-		b.NewRule(makefile.FilePath(filepath.Join("src", p, ".pkginfo"))).
+		b.NewRule(makefile.FilePath(filepath.Join("src", p+".pkginfo"))).
 			AddDep(uts)
 
 		//add output tarring rule
