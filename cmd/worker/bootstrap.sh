@@ -7,12 +7,12 @@ mkdir /root/pkgs
 tar -xf /root/pkgs.tar -C /root/pkgs
 
 # unpack lpkg
-tar -xf /root/pkgs/lpkg.tar -C /
+tar -xf /root/pkgs/lpkg.tar.* -C /
 
 # create database dir
 mkdir -p /etc/lpkg.d/db
 
 # install packages
 for i in $(cat /root/pkgs/inst.list); do
-    lpkg-inst $i
+    lpkg-inst $i.tar.*
 done

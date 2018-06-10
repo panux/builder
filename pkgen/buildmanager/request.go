@@ -66,7 +66,7 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 			}
 		}()
 		err = tw.WriteHeader(&tar.Header{
-			Name: "./" + d + ".tar" + ext,
+			Name: "./" + d + ".tar." + ext,
 			Mode: 0644,
 			Size: int64(l),
 		})
