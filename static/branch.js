@@ -115,7 +115,6 @@ function start() {
         branchListGen().then(
             (l) => {
                 elem.childNodes[0].replaceWith(l);
-                elem = l;
             },
             () => { meh.toast(meh.text('Failed to update. Retrying soon.')); }
         );
