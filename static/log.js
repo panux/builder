@@ -31,7 +31,7 @@ function lineElement(line) {
 
     var linetd = meh.elem('td');
     linetd.appendChild(meh.text(line.text));
-    linetd.classList.add(lineClass(line.stream));
+    linetd.classList.add(streamClass(line.stream));
     tr.appendChild(linetd);
 
     return tr;
