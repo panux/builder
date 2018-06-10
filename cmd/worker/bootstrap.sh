@@ -4,10 +4,10 @@ set -e
 
 # unpack packages tar
 mkdir /root/pkgs
-tar -xf /root/pkgs.tar -C /root/pkgs .
+tar -xf /root/pkgs.tar -C /root/pkgs
 
 # unpack lpkg
-tar -xf /root/pkgs/lpkg.tar -C / .
+tar -xf /root/pkgs/lpkg.tar -C /
 
 # create database dir
 mkdir -p /etc/lpkg.d/db
