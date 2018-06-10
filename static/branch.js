@@ -39,7 +39,7 @@ function buildElem(buildStatus) {
         li.onclick = () => {
             pageURL.pathname = '/log.html';
             pageURL.searchParams.delete('branch');
-            pageURL.searchParams.set('buildHash', btoa(Array.prototype.map.call(buildStatus.info.hash, (v) => {return String.fromCharCode(v);}).join('')));
+            pageURL.searchParams.set('buildHash', Array.from(buildStatus.info.hash, (v) => {return ('0' + (v & 0xFF).toString(16)).slice(-2);}).join(''));
             window.location.assign(pageURL.toString());
         };
     }
