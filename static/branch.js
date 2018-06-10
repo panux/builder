@@ -119,7 +119,7 @@ function start() {
             },
             () => { meh.toast(meh.text('Failed to update. Retrying soon.')); }
         );
-    }, 10000);
+    }, 2000);
 }
 
 //run start on content loaded
