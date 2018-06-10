@@ -174,6 +174,10 @@ func (b *Builder) prepRPG() error {
 // Before starting the build, lcb is called with the list of targets.
 // The provided context supports cancellation.
 func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
+	b.hc = &hashCache{
+		m:  make(map[hashCacheKey][sha256.Size]byte),
+		pr: b.PackageRetriever,
+	}
 	err := b.prepRPG()
 	if err != nil {
 		return err
