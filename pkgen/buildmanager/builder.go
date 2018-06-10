@@ -53,9 +53,11 @@ func (hc *hashCache) hash(name string, arch pkgen.Arch, bootstrap bool) ([sha256
 	if err != nil {
 		return [sha256.Size]byte{}, err
 	}
-
 	var ha [sha256.Size]byte
 	copy(ha[:], h.Sum(nil))
+
+	//store to cache
+	hc.m[hck] = ha
 
 	return ha, nil
 }
