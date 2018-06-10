@@ -18,6 +18,48 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 )
 
+type hashCache struct {
+	m  map[hashCacheKey][sha256.Size]byte
+	pr PackageRetriever
+}
+
+type hashCacheKey struct {
+	name      string
+	arch      pkgen.Arch
+	bootstrap bool
+}
+
+func (hc *hashCache) hash(name string, arch pkgen.Arch, bootstrap bool) ([sha256.Size]byte, error) {
+	hck := hashCacheKey{
+		name:      name,
+		arch:      arch,
+		bootstrap: bootstrap,
+	}
+
+	//lookup in cache
+	if h, ok := hc.m[hck]; ok {
+		return h, nil
+	}
+
+	//get package
+	_, r, _, err := hc.pr.GetPkg(name, arch, bootstrap)
+	if err != nil {
+		return [sha256.Size]byte{}, err
+	}
+
+	//hash package
+	h := sha256.New()
+	_, err = io.Copy(h, r)
+	if err != nil {
+		return [sha256.Size]byte{}, err
+	}
+
+	var ha [sha256.Size]byte
+	copy(ha[:], h.Sum(nil))
+
+	return ha, nil
+}
+
 // Builder is a tool to build packages. All fields are required.
 type Builder struct {
 
@@ -56,6 +98,9 @@ type Builder struct {
 
 	// InfoCallback is a callback run when build info is generated.
 	InfoCallback func(jobName string, info BuildInfo) error
+
+	// hc is a hash cache for packages
+	hc *hashCache
 }
 
 // genBuildJob creates a *buildJob with the given package entry, targeting the given arch.
@@ -261,25 +306,10 @@ func (bj *buildJob) hash() ([]byte, error) {
 		//read and hash packages used
 		ent := &blents[i+len(bleh)]
 		err := func() (err error) {
-			ent.Name = v
-			_, r, ext, err := bj.buider.PackageRetriever.GetPkg(v, bj.pk.BuildArch, bj.buider.index[v].Pkgen.Builder == "bootstrap")
-			if err != nil {
-				return err
-			}
-			defer func() {
-				cerr := r.Close()
-				if cerr != nil && err == nil {
-					err = cerr
-				}
-			}()
-			ent.Name += ".tar." + ext
-			h := sha256.New()
-			_, err = io.Copy(h, r)
-			if err != nil {
-				return err
-			}
-			ent.Hash = h.Sum(nil)
-			return nil
+			h, err := bj.buider.hc.hash(v, bj.pk.BuildArch, bj.buider.index[v].Pkgen.Builder == "bootstrap")
+			ent.Hash = h[:]
+			ent.Name += ".tar"
+			return
 		}()
 		if err != nil {
 			return nil, err
