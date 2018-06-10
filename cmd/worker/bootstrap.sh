@@ -14,5 +14,5 @@ mkdir -p /etc/lpkg.d/db
 
 # install packages
 for i in $(cat /root/pkgs/inst.list); do
-    lpkg-inst $i.tar.*
+    sh /usr/bin/lpkg-inst $i.tar.*
 done
