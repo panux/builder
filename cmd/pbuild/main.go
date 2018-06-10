@@ -88,15 +88,15 @@ func main() {
 
 	//do build loop
 	wg.Add(1)
+	startch := make(chan struct{})
 	go func() {
 		defer wg.Done()
 
-		ticker := time.NewTicker(time.Minute)
+		ticker := time.NewTicker(time.Minute * 15)
 		srvstop := srvctx.Done()
 		defer ticker.Stop()
 		for {
-			select {
-			case <-ticker.C:
+			rb := func() {
 				log.Println("Starting build. . .")
 				err := repo.WithBranch(srvctx, "beta", func(ctx context.Context, source vfs.FileSystem) error {
 					return (&buildmanager.Builder{
@@ -123,10 +123,20 @@ func main() {
 				if err != nil {
 					fmt.Printf("Failed to run post-build command: %q\n", err.Error())
 				}
+			}
+			select {
+			case <-ticker.C:
+				rb()
+			case <-startch:
+				rb()
 			case <-srvstop:
 				return
 			}
 		}
+	}()
+
+	go func() {
+		startch <- struct{}{}
 	}()
 
 	//configure HTTP router
@@ -147,6 +157,10 @@ func main() {
 		w.Header().Add("Cache-Control", "max-age=60")
 		w.Header().Add("Cache-Control", "stale-if-error=120")
 		http.FileServer(http.Dir(Config.Static)).ServeHTTP(w, r)
+	})
+	router.HandleFunc("/api/start", func(w http.ResponseWriter, r *http.Request) {
+		go func() { startch <- struct{}{} }()
+		w.Write([]byte("ok"))
 	})
 
 	//start HTTP server
