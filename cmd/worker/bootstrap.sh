@@ -2,8 +2,11 @@
 # this should be installed at /root/bootstrap.sh
 set -e
 
-# symlink busybox
-busybox --install -s /usr/bin
+mkdir /hax
+
+# symlink busybox so we can access it during the build
+busybox --install -s /hax
+export PATH=/hax:$PATH
 
 # unpack packages tar
 mkdir /root/pkgs
