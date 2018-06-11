@@ -10,4 +10,5 @@ FROM scratch
 COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox
 COPY worker /usr/bin/worker
 COPY cmd/worker/bootstrap.sh /root/bootstrap.sh
+RUN ["busybox", "mkdir", "/tmp"]
 ENTRYPOINT ["worker"]
