@@ -2,6 +2,9 @@
 # this should be installed at /root/bootstrap.sh
 set -e
 
+# symlink busybox
+busybox --install -s /usr/bin
+
 # unpack packages tar
 mkdir /root/pkgs
 tar -xf /root/pkgs.tar -C /root/pkgs
