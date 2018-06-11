@@ -126,7 +126,7 @@ func (ch chanLogStream) Close() {
 
 // trySubscribe attempts to subscribe to the *LogSession and returns whether it was successful.
 func (ls *LogSession) trySubscribe(lch chan<- buildlog.Line) bool {
-	defer recover()
+	defer func() { recover() }()
 	ls.subscribe <- lch
 	return true
 }
@@ -145,7 +145,7 @@ func (ls *LogSession) Stream() (LogStream, error) {
 
 // trySend tries to send a line to the channel and returns whether it was sucessful.
 func trySend(line buildlog.Line, ch chan<- buildlog.Line) bool {
-	defer recover()
+	defer func() { recover() }()
 	ch <- line
 	return true
 }
