@@ -11,4 +11,6 @@ COPY --from=bbuilder /root/busybox/busybox /usr/bin/busybox
 COPY worker /usr/bin/worker
 COPY cmd/worker/bootstrap.sh /root/bootstrap.sh
 RUN ["busybox", "mkdir", "/tmp"]
+RUN ["busybox", "ln", "-s", "/usr/bin", "/bin"]
+RUN ["busybox", "ln", "-s", "/usr/bin/busybox", "/usr/bin/sh"]
 ENTRYPOINT ["worker"]
