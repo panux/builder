@@ -32,6 +32,23 @@ var authk []byte
 // ctx is the server-wide context with cancellation.
 var ctx context.Context
 
+// lifech is a channel that keeps the node alive
+var lifech = make(chan struct{})
+
+// activityTrack keeps the worker alive
+// usage: defer activityTrack()()
+func activityTrack() func() {
+	lifech <- struct{}{}
+	cchan := make(chan struct{})
+	tick := time.NewTicker(time.Second)
+	go func() {
+		for range tick.C {
+			lifech <- struct{}{}
+		}
+	}()
+	return tick.Stop
+}
+
 func main() {
 	defer log.Println("Shutdown complete.")
 
@@ -51,6 +68,23 @@ func main() {
 		srvcancel()
 	}()
 	signal.Notify(sigch, syscall.SIGTERM)
+
+	//set up timeout self-destruct
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			timeout := time.NewTimer(time.Minute * 10)
+			select {
+			case <-ctx.Done():
+				return
+			case <-timeout.C:
+				srvcancel()
+			case <-lifech:
+			}
+			timeout.Stop()
+		}
+	}()
 
 	//parse flags
 	var tlskeypath string
@@ -150,11 +184,13 @@ func authReq(raw string, reqsub interface{}) (*internal.Request, error) {
 
 // handleStatus handles Kubernetes status requests.
 func handleStatus(w http.ResponseWriter, r *http.Request) {
+	defer activityTrack()()
 	w.Write([]byte("online"))
 }
 
 // handleMkdir handles mkdir requests.
 func handleMkdir(w http.ResponseWriter, r *http.Request) {
+	defer activityTrack()()
 	//check HTTP method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
@@ -203,6 +239,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 
 // handleWriteFile handles a file write request.
 func handleWriteFile(w http.ResponseWriter, r *http.Request) {
+	defer activityTrack()()
 	//WaitGroup for cleanup
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -270,6 +307,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 
 // handleReadFile handles file read requests.
 func handleReadFile(w http.ResponseWriter, r *http.Request) {
+	defer activityTrack()()
 	//WaitGroup for cleanup
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -343,6 +381,7 @@ var wsup = &websocket.Upgrader{
 
 // handleRunCmd handles command run requests.
 func handleRunCmd(w http.ResponseWriter, r *http.Request) {
+	defer activityTrack()()
 	//upgrade request to websocket
 	c, err := wsup.Upgrade(w, r, nil)
 	if err != nil {
