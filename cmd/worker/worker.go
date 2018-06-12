@@ -39,7 +39,6 @@ var lifech = make(chan struct{})
 // usage: defer activityTrack()()
 func activityTrack() func() {
 	lifech <- struct{}{}
-	cchan := make(chan struct{})
 	tick := time.NewTicker(time.Second)
 	go func() {
 		for range tick.C {
