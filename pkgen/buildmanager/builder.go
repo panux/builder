@@ -118,10 +118,11 @@ func (b *Builder) genBuildJob(ent *RawPkent, arch pkgen.Arch, bootstrap bool) *b
 	}
 
 	return &buildJob{
-		buider:  b,
-		pkgname: name,
-		pk:      pk,
-		err:     err,
+		buider:       b,
+		pkgname:      name,
+		pk:           pk,
+		bootstrapped: pkgen.Builder(ent.Pkgen.Builder).IsBootstrap(),
+		err:          err,
 	}
 }
 
@@ -312,7 +313,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 		//read and hash packages used
 		ent := &blents[i+len(bleh)]
 		err := func() (err error) {
-			h, err := bj.buider.hc.hash(v, bj.pk.BuildArch, bj.buider.index[v].Pkgen.Builder == "bootstrap")
+			h, err := bj.buider.hc.hash(v, bj.pk.BuildArch, pkgen.Builder(bj.buider.index[v].Pkgen.Builder).IsBootstrap())
 			ent.Hash = h[:]
 			ent.Name += ".tar"
 			return
@@ -387,7 +388,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 		bld := bj.buider.index[pkfs[i]]
 		pkfs[i] = filepath.Base(filepath.Dir(bld.Path))
 		pkfs[i] += ":" + bj.pk.HostArch.String()
-		if bld.Pkgen.Builder == "bootstrap" {
+		if bj.bootstrapped {
 			pkfs[i] += "-bootstrap"
 		}
 	}
