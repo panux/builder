@@ -1,5 +1,5 @@
 hash: 4cf7f7997232835041c6618929b8a11b07bcdaf666f13923ef206fe7ff120f14
-updated: 2018-06-09T09:57:29.600910508-04:00
+updated: 2018-06-14T21:04:06.566266138-04:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
@@ -44,7 +44,7 @@ imports:
 - name: github.com/jadr2ddude/sse
   version: 27c02fceb29b326a4c83d8db2974794ada133290
 - name: github.com/jadr2ddude/xgraph
-  version: a0580c9f22565036468a6c34bb46b7766e4a3afa
+  version: 3e2d9e517bea423b8557cf7854763fda59183247
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/Masterminds/semver
@@ -89,7 +89,7 @@ imports:
   subpackages:
   - rate
 - name: golang.org/x/tools
-  version: c65208ee29128450a4a024e3b7710f3a8d14028d
+  version: c6269430a55499efa2e293ae66926175dc3af30e
   subpackages:
   - godoc/vfs
 - name: gopkg.in/inf.v0
