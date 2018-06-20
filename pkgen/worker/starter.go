@@ -19,7 +19,7 @@ import (
 
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/gorilla/websocket"
-	"github.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )

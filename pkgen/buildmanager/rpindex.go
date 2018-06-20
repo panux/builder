@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen"
 	"golang.org/x/tools/godoc/vfs"
 )
 

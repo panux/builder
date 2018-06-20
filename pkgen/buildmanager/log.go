@@ -1,6 +1,6 @@
 package buildmanager
 
-import "github.com/panux/builder/pkgen/buildlog"
+import "gitlab.com/panux/builder/pkgen/buildlog"
 
 // LogProvider is an interface for requesting log handlers for builds/
 type LogProvider interface {

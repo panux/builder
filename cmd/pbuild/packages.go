@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/panux/builder/pkgen"
-	"github.com/panux/builder/pkgen/buildmanager"
+	"gitlab.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen/buildmanager"
 )
 
 // PackageStore is a package storage/retrieval system.

@@ -18,10 +18,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/panux/builder/internal"
-	"github.com/panux/builder/pkgen"
-	"github.com/panux/builder/pkgen/buildlog"
-	"github.com/panux/builder/pkgen/worker"
+	"gitlab.com/panux/builder/internal"
+	"gitlab.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen/buildlog"
+	"gitlab.com/panux/builder/pkgen/worker"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )

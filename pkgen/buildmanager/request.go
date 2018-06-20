@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen"
 )
 
 // BuildJobRequest is a BuildManager request container.

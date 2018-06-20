@@ -17,9 +17,9 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/panux/builder/pkgen"
 	makefile "github.com/panux/go-makefile"
 	"github.com/urfave/cli"
+	"gitlab.com/panux/builder/pkgen"
 	"golang.org/x/tools/godoc/vfs"
 )
 

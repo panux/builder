@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen"
 )
 
 // BuildInfo is a struct containing identifying information for the build.

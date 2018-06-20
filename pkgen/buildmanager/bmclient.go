@@ -15,8 +15,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/panux/builder/internal"
-	"github.com/panux/builder/pkgen/buildlog"
+	"gitlab.com/panux/builder/internal"
+	"gitlab.com/panux/builder/pkgen/buildlog"
 )
 
 // Client is a client to the buildmanager server.

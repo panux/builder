@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

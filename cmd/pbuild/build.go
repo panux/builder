@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/panux/builder/pkgen"
-	"github.com/panux/builder/pkgen/buildmanager"
+	"gitlab.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen/buildmanager"
 )
 
 // parseJobName parses the name of a job into identifiers for a build.

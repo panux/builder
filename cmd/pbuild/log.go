@@ -13,8 +13,8 @@ import (
 	"sync"
 
 	"github.com/jadr2ddude/sse"
-	"github.com/panux/builder/pkgen/buildlog"
-	"github.com/panux/builder/pkgen/buildmanager"
+	"gitlab.com/panux/builder/pkgen/buildlog"
+	"gitlab.com/panux/builder/pkgen/buildmanager"
 )
 
 // LogStream is an interface for a log reading mechanism.

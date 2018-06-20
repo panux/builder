@@ -21,8 +21,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jadr2ddude/xgraph"
-	"github.com/panux/builder/pkgen"
-	"github.com/panux/builder/pkgen/buildmanager"
+	"gitlab.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen/buildmanager"
 	"golang.org/x/tools/godoc/vfs"
 )
 

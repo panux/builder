@@ -16,8 +16,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/panux/builder/pkgen"
-	"github.com/panux/builder/pkgen/dlapi"
+	"gitlab.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen/dlapi"
 )
 
 func main() {

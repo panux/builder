@@ -1,7 +1,7 @@
 // Package internal is used internally by worker (DO NOT USE EXTERNALLY)
 package internal
 
-import "github.com/panux/builder/pkgen"
+import "gitlab.com/panux/builder/pkgen"
 
 // MkdirRequest is a request to make a dir on the worker.
 type MkdirRequest struct {

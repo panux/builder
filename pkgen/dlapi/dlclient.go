@@ -1,4 +1,4 @@
-//Package dlapi implements a client for github.com/panux/builder/cmd/dlserver
+//Package dlapi implements a client for gitlab.com/panux/builder/cmd/dlserver
 package dlapi
 
 import (
@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/panux/builder/pkgen"
+	"gitlab.com/panux/builder/pkgen"
 )
 
 // DlClient is a client for a download server.
