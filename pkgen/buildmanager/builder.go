@@ -173,6 +173,19 @@ func (b *Builder) prepRPG() error {
 	return nil
 }
 
+// GetGraph gets a build graph and a list of jobs.
+func (b *Builder) GetGraph() (*xgraph.Graph, []string, error) {
+	b.hc = &hashCache{
+		m:  make(map[hashCacheKey][sha256.Size]byte),
+		pr: b.PackageRetriever,
+	}
+	err := b.prepRPG()
+	if err != nil {
+		return nil, nil, err
+	}
+	return b.genGraph()
+}
+
 // Build runs a build using the given builder.
 // Before starting the build, lcb is called with the list of targets.
 // The provided context supports cancellation.
