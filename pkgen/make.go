@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	makefile "github.com/panux/go-makefile"
+	makefile "gitlab.com/panux/go-makefile"
 )
 
 // MakeVars is a set of makefile.MakeVar to use for generated makefiles.

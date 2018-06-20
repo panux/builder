@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/jadr2ddude/sse"
+	"gitlab.com/jadr2ddude/sse"
 	"gitlab.com/panux/builder/pkgen/buildlog"
 	"gitlab.com/panux/builder/pkgen/buildmanager"
 )

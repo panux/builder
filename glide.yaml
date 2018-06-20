@@ -8,9 +8,9 @@ import:
   - pkg/namesgenerator
 - package: github.com/gorilla/websocket
   version: v1.2.0
-- package: github.com/jadr2ddude/sse
-- package: github.com/jadr2ddude/xgraph
-- package: github.com/panux/go-makefile
+- package: gitlab.com/jadr2ddude/sse
+- package: gitlab.com/jadr2ddude/xgraph
+- package: gitlab.com/panux/go-makefile
 - package: github.com/urfave/cli
   version: v1.20.0
 - package: golang.org/x/tools

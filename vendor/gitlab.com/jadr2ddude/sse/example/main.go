@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jadr2ddude/sse"
+	"gitlab.com/jadr2ddude/sse"
 )
 
 type msg struct {

@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jadr2ddude/xgraph"
+	"gitlab.com/jadr2ddude/xgraph"
 	"gitlab.com/panux/builder/pkgen"
 	"golang.org/x/tools/godoc/vfs"
 )

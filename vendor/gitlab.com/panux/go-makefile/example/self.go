@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	makefile "github.com/panux/go-makefile"
+	makefile "gitlab.com/panux/go-makefile"
 )
 
 func chkerr(err error) {
@@ -86,7 +86,7 @@ func main() {
 		AddCmd(
 			makefile.NewCmd(goget.Sub()).
 				SetEnv(shgopath, gopath.Sub()).
-				AddArg(makefile.FilePath("github.com/panux/go-makefile")).
+				AddArg(makefile.FilePath("gitlab.com/panux/go-makefile")).
 				SetNoPrint(),
 		).
 		NewCmd("touch").AddArg(makefile.Target).SetNoPrint()
