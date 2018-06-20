@@ -8,7 +8,7 @@
     "cache": "/srv/cache",
     "output": "/srv/output",
     "gitDir": "/srv/git",
-    "gitRepo": "https://github.com/panux/packages-main",
+    "gitRepo": "https://gitlab.com/panux/packages-main",
     "arch": ["x86_64"],
     "parallel": 2,
     "maxbuf": 500000000,
