@@ -1,5 +1,5 @@
-hash: 4cf7f7997232835041c6618929b8a11b07bcdaf666f13923ef206fe7ff120f14
-updated: 2018-06-14T21:04:06.566266138-04:00
+hash: e717820946a1dbfc6abf1d66add876127efbba2c71a2f4df75bce5e35b56999c
+updated: 2018-06-20T16:37:05.246983186-04:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
@@ -38,25 +38,27 @@ imports:
 - name: github.com/gorilla/websocket
   version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
 - name: github.com/huandu/xstrings
-  version: 2bf18b218c51864a87384c06996e40ff9dcff8e1
+  version: 7bb0250b58e5c15670406e6f93ffda43281305b1
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
-- name: gitlab.com/jadr2ddude/sse
-  version: 27c02fceb29b326a4c83d8db2974794ada133290
-- name: gitlab.com/jadr2ddude/xgraph
-  version: 3e2d9e517bea423b8557cf7854763fda59183247
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
+- name: github.com/looplab/tarjan
+  version: 9cc6d6cebfb53dbdb1376b597384e92465f6fcd4
 - name: github.com/Masterminds/semver
   version: 59c29afe1a994eacb71c833025ca7acf874bb1da
 - name: github.com/Masterminds/sprig
   version: 6b2a58267f6a8b1dc8e2eb5519b984008fa85e8c
-- name: gitlab.com/panux/go-makefile
-  version: a9aa4887906987fb765b51cb965246c0eb660c6b
 - name: github.com/spf13/pflag
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
 - name: github.com/urfave/cli
   version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
+- name: gitlab.com/jadr2ddude/sse
+  version: f6d1507d33bb8a76d6bbed112d45ddff3fc9ee7a
+- name: gitlab.com/jadr2ddude/xgraph
+  version: 40a21f21878753fe57cb79f0e390042334522092
+- name: gitlab.com/panux/go-makefile
+  version: a9aa4887906987fb765b51cb965246c0eb660c6b
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -89,7 +91,7 @@ imports:
   subpackages:
   - rate
 - name: golang.org/x/tools
-  version: c6269430a55499efa2e293ae66926175dc3af30e
+  version: 25b95b48224cce18163c7d49dcfb89a2d5ecd209
   subpackages:
   - godoc/vfs
 - name: gopkg.in/inf.v0
