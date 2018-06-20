@@ -10,4 +10,6 @@ before_install:
 install:
  - echo doing nothing
 script:
+ - mkdir -p $GOPATH/src/gitlab.com/jadr2ddude
+ - cp -r $GOPATH/src/github.com/jadr2ddude/sse $GOPATH/src/gitlab.com/jadr2ddude/sse
  - $HOME/gopath/bin/goveralls -service=travis-ci

@@ -1,5 +1,5 @@
 hash: e717820946a1dbfc6abf1d66add876127efbba2c71a2f4df75bce5e35b56999c
-updated: 2018-06-20T16:37:05.246983186-04:00
+updated: 2018-06-20T16:45:36.88193381-04:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
@@ -54,7 +54,7 @@ imports:
 - name: github.com/urfave/cli
   version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 - name: gitlab.com/jadr2ddude/sse
-  version: f6d1507d33bb8a76d6bbed112d45ddff3fc9ee7a
+  version: 07b0142e7d959cd01939aee3f5344d365b1a4319
 - name: gitlab.com/jadr2ddude/xgraph
   version: 40a21f21878753fe57cb79f0e390042334522092
 - name: gitlab.com/panux/go-makefile
