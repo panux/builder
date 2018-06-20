@@ -4,7 +4,7 @@ set -e
 
 gobuild() {
     echo Building $1
-    go build -o $1 --ldflags '-linkmode external -extldflags "-static"' github.com/panux/builder/cmd/$1
+    go build -o $1 --ldflags '-linkmode external -extldflags "-static"' gitlab.com/panux/builder/cmd/$1
 }
 
 dbuild() {
