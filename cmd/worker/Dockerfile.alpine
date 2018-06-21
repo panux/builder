@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM alpine:3.6
 RUN apk --no-cache add make git gcc libc-dev
 COPY worker /usr/bin/worker
 COPY cmd/worker/bootstrap.sh /root/bootstrap.sh
