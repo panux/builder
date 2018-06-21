@@ -91,13 +91,14 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		opts.LogOut = buildlog.DefaultHandler
 	}
 	var builderr error
+	var srverr bool
 	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
 		if s != "success" { //forward error to build and return err
 			builderr = errors.New(s)
 		}
 	})
 	defer func() {
-		if builderr != nil {
+		if builderr != nil && !srverr {
 			opts.LogOut.Log(buildlog.Line{
 				Text:   "build failed",
 				Stream: buildlog.StreamBuild,
@@ -177,6 +178,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	//send request
 	err = wsSendRequest(c, rdat)
 	if err != nil {
+		srverr = true
 		return
 	}
 
@@ -184,6 +186,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	if !bjr.pk.Builder.IsBootstrap() {
 		err = wsSendPackages(c, bjr)
 		if err != nil {
+			srverr = true
 			return
 		}
 	}
@@ -191,6 +194,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 	//send souce tar
 	err = wsSendSources(ctx, c, bjr)
 	if err != nil {
+		srverr = true
 		return
 	}
 
