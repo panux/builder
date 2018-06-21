@@ -132,12 +132,24 @@ func (wp *workerPod) genPodSpec(pk *pkgen.PackageGenerator, name string) (*v1.Po
 				},
 			},
 		},
+		v1.Volume{
+			Name: "ccache",
+			VolumeSource: v1.VolumeSource{
+				HostPath: &v1.HostPathVolumeSource{
+					Path: "/srv/pbuild/ccache",
+				},
+			},
+		},
 	}
 	vmounts := []v1.VolumeMount{
 		v1.VolumeMount{
 			Name:      "srvkey",
 			ReadOnly:  true,
 			MountPath: "/srv/secret/",
+		},
+		v1.VolumeMount{
+			Name:      "ccache",
+			MountPath: "/ccache",
 		},
 	}
 	switch pk.Builder {

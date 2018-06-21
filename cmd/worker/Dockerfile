@@ -13,4 +13,6 @@ COPY cmd/worker/bootstrap.sh /root/bootstrap.sh
 RUN ["busybox", "mkdir", "/tmp"]
 RUN ["busybox", "ln", "-s", "/usr/bin", "/bin"]
 RUN ["busybox", "ln", "-s", "/usr/bin/busybox", "/usr/bin/sh"]
+ENV PATH="/usr/lib/ccache/bin:${PATH}"
+ENV CCACHE_DIR=/ccache
 ENTRYPOINT ["worker"]
