@@ -106,11 +106,11 @@ func (rpg *RawPackageGenerator) tmpl(name string, in string, buildarch Arch, hos
 		"confarch": func() string {
 			return buildarch.AutoTools()
 		},
-		"hostarch": func() string {
-			return hostarch.String()
+		"hostarch": func() Arch {
+			return hostarch
 		},
-		"buildarch": func() string {
-			return buildarch.String()
+		"buildarch": func() Arch {
+			return buildarch
 		},
 		"confflags": func() string {
 			return fmt.Sprintf("--build %s-pc-linux-musl --host %s-pc-linux-musl", buildarch.AutoTools(), hostarch.AutoTools())
