@@ -433,7 +433,11 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	}
 
 	//create the BuildJobRequest
-	bjr, err := bj.buider.CreateBuildJobRequest(bj.pk, bj.buider.index.DepWalker(), bj.buider.PackageRetriever, load)
+	bdeps, err := bj.Dependencies()
+	if err != nil {
+		return err
+	}
+	bjr, err := bj.buider.CreateBuildJobRequest(bj.pk, bdeps, bj.buider.PackageRetriever, load)
 	if err != nil {
 		return err
 	}
