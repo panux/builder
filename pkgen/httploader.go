@@ -8,7 +8,9 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 )
 
@@ -57,6 +59,10 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 	if err != nil {
 		return -1, nil, err
 	}
+	req.Header.Add("user-agent", "curl/7.60.0")
+	req.Header.Add("accept", "*/*")
+	req.Header.Add("host", u.Hostname())
+	log.Println(req)
 	req = req.WithContext(ctx)
 	resp, err := hl.cli.Do(req)
 	if err != nil {
@@ -112,6 +118,11 @@ func (mr *maxReader) Read(dat []byte) (int, error) {
 func NewHTTPLoader(client *http.Client, maxbuf uint) Loader {
 	if client == nil {
 		client = http.DefaultClient
+	}
+	client.Jar, _ = cookiejar.New(nil)
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		log.Println(req, via)
+		return nil
 	}
 	return &httpLoader{
 		cli:    client,
