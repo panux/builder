@@ -93,6 +93,16 @@ func main() {
 		}
 	}()
 
+	wg.Add(1)
+	go func() { //run http server shutdown
+		defer wg.Done()
+		<-ctx.Done()
+		err := srv.Shutdown(context.Background())
+		if err != nil {
+			log.Printf("HTTP shutdown error: %q\n", err.Error())
+		}
+	}()
+
 	<-ctx.Done() //wait for shutdown
 }
 
