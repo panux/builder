@@ -9,7 +9,6 @@ import (
 	"log"
 	"math/rand"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -271,12 +270,12 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(pkfs)
-	for i := 1; i < len(pkfs); {
-		if pkfs[i] == pkfs[i-1] {
-			pkfs = pkfs[:i+copy(pkfs[i:], pkfs[i+1:])]
-		} else {
-			i++
+	pkfs = dedup(pkfs)
+	for i, v := range pkfs {
+		bld := bj.buider.index[v]
+		pkfs[i] += ":" + bj.pk.HostArch.String()
+		if pkgen.Builder(bld.Pkgen.Builder).IsBootstrap() {
+			pkfs[i] += "-bootstrap"
 		}
 	}
 	return pkfs, nil
@@ -397,13 +396,10 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	for i := range pkfs {
-		bld := bj.buider.index[pkfs[i]]
-		pkfs[i] = filepath.Base(filepath.Dir(bld.Path))
-		pkfs[i] += ":" + bj.pk.HostArch.String()
-		if bj.bootstrapped && bld.Pkgen != nil && bld.Pkgen.Builder == "bootstrap" {
-			pkfs[i] += "-bootstrap"
-		}
+	for i, v := range pkfs {
+		parts := strings.Split(v, ":")
+		bld := bj.buider.index[parts[0]]
+		pkfs[i] = filepath.Base(filepath.Dir(bld.Path)) + parts[1]
 	}
 	pkfs = dedup(pkfs)
 	return pkfs, nil
@@ -433,7 +429,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	}
 
 	//create the BuildJobRequest
-	bdeps, err := bj.Dependencies()
+	bdeps, err := bj.pkgDeps()
 	if err != nil {
 		return err
 	}
