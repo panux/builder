@@ -86,6 +86,23 @@ func main() {
 	//branch state
 	branch := &BranchStatus{BranchName: "beta"}
 
+	//wait for buildmanager to go online
+	for bmonline := false; !bmonline; {
+		log.Println("Attempting to connect to build manager")
+		err := bmcli.Status()
+		if err != nil {
+			log.Printf("Failed to connect to build manager: %q\n", err.Error())
+			select {
+			case <-srvctx.Done():
+				return
+			case <-time.NewTimer(time.Second * 3).C:
+			}
+			continue
+		}
+		bmonline = true
+	}
+	log.Println("Connected to build manager")
+
 	//do build loop
 	wg.Add(1)
 	startch := make(chan struct{})
