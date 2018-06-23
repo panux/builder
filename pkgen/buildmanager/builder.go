@@ -399,7 +399,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 	for i, v := range pkfs {
 		parts := strings.Split(v, ":")
 		bld := bj.buider.index[parts[0]]
-		pkfs[i] = filepath.Base(filepath.Dir(bld.Path)) + parts[1]
+		pkfs[i] = filepath.Base(filepath.Dir(bld.Path)) + ":" + parts[1]
 	}
 	pkfs = dedup(pkfs)
 	return pkfs, nil
