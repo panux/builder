@@ -43,7 +43,8 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 		var l uint32
 		var r io.ReadCloser
 		var ext string
-		l, r, ext, err = bjr.pgetter.GetPkg(parseJobName(d))
+		name, arch, bootstrap := parseJobName(d)
+		l, r, ext, err = bjr.pgetter.GetPkg(name, arch, bootstrap)
 		if err != nil {
 			return
 		}
@@ -56,7 +57,7 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 			}
 		}()
 		err = tw.WriteHeader(&tar.Header{
-			Name: "./" + d + ".tar." + ext,
+			Name: "./" + name + ".tar." + ext,
 			Mode: 0644,
 			Size: int64(l),
 		})
