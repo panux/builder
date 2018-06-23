@@ -39,11 +39,13 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 			err = cerr
 		}
 	}()
-	for _, d := range bjr.bdeps {
+	bdns := make([]string, len(bjr.bdeps))
+	for i, d := range bjr.bdeps {
 		var l uint32
 		var r io.ReadCloser
 		var ext string
 		name, arch, bootstrap := parseJobName(d)
+		bdns[i] = name
 		l, r, ext, err = bjr.pgetter.GetPkg(name, arch, bootstrap)
 		if err != nil {
 			return
@@ -74,7 +76,7 @@ func (bjr *BuildJobRequest) tar(w io.Writer) (err error) {
 			return
 		}
 	}
-	ilst := []byte(strings.Join(bjr.bdeps, "\n"))
+	ilst := []byte(strings.Join(bdns, "\n"))
 	err = tw.WriteHeader(&tar.Header{
 		Name: "./inst.list",
 		Mode: 0644,
