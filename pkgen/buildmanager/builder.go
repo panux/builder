@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -416,6 +417,7 @@ func dedup(in []string) []string {
 		o[i] = v
 		i++
 	}
+	sort.Strings(o)
 	return o
 }
 
