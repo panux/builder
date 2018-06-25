@@ -14,6 +14,12 @@ function changeBranch(branch) {
     window.location.assign(pageURL.toString());
 }
 
+function displayError(err) {
+    var e = meh.elem('span');
+    e.appendChild(meh.text(err));
+    meh.toast(e);
+}
+
 // statusIcons is a map of build states to names of icons to display
 var statusIcons = {
     'waiting': 'timer',
@@ -115,14 +121,14 @@ function start() {
         elem.appendChild(meh.loadingWheel);
 
         if(!prevFinished) {
-            meh.toast(meh.text('Slow connection. Updates may be delayed.'));
+            displayError('Slow connection. Updates may be delayed.');
             return;
         }
         branchListGen().then(
             (l) => {
                 elem.childNodes[0].replaceWith(l);
             },
-            () => { meh.toast(meh.text('Failed to update. Retrying soon.')); }
+            () => { displayError('Failed to update. Retrying soon.'); }
         );
     }, 2000);
 }

@@ -6,6 +6,12 @@ var pageURL = new URL(window.location.href);
 // hash is the buildHash parameter
 var hash = pageURL.searchParams.get('buildHash');
 
+function displayError(err) {
+    var e = meh.elem('span');
+    e.appendChild(meh.text(err));
+    meh.toast(e);
+}
+
 // streamClass returns the CSS class corresponding to the line stream
 function streamClass(streamnum) {
     //handle unrecognized stream number
@@ -42,9 +48,9 @@ function start() {
     document.getElementById('log').classList.remove('hidden');
     var tbody = document.getElementById('logbody');
     pbapi.log(hash, (line) => tbody.appendChild(lineElement(line))).then(
-        () => meh.toast(meh.text('Finished loading log.')),
+        () => displayError('Finished loading log.'),
         (err) => {
-            meh.toast(meh.text('Failed to load log.'));
+            displayError('Failed to load log.');
             var errmsg = meh.elem('h1');
             errmsg.appendChild(meh.text('Failed to load log: '));
             errmsg.appendChild(meh.text(err.toString()));
