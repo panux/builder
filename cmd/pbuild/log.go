@@ -121,6 +121,7 @@ func (ch chanLogStream) NextLine() (buildlog.Line, error) {
 }
 
 func (ch chanLogStream) Close() {
+	defer func() { recover() }()
 	close(ch)
 }
 
@@ -222,7 +223,10 @@ func (lslh *logSessionLogHandler) Log(l buildlog.Line) error {
 
 func (lslh *logSessionLogHandler) Close() error {
 	// close input channel
-	close(lslh.ch)
+	func() {
+		defer func() { recover() }()
+		close(lslh.ch)
+	}()
 
 	//deregister session
 	lslh.lm.lck.Lock()
