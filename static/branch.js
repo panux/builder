@@ -30,12 +30,18 @@ function chip(text) {
     return d;
 }
 
+var hasLog = {
+    'running': true,
+    'finished': true,
+    'failed': true
+};
+
 // buildElem returns a li element for a build in the list
 function buildElem(buildStatus) {
     var li = meh.elem('li');
     li.classList.add('collection-item');
 
-    if(buildStatus.info) {
+    if(buildStatus.info && hasLog[buildStatus.state]) {
         li.onclick = () => {
             pageURL.pathname = '/log.html';
             pageURL.searchParams.delete('branch');
