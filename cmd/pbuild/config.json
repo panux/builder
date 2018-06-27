@@ -10,7 +10,7 @@
     "gitDir": "/srv/git",
     "gitRepo": "https://gitlab.com/panux/packages-main",
     "arch": ["x86_64"],
-    "parallel": 2,
+    "parallel": 4,
     "maxbuf": 500000000,
     "afterBuild": ["echo","build done"]
 }
