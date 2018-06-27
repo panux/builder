@@ -474,10 +474,13 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	err = bj.buider.BuildCache.UpdateCache(BuildCacheEntry{
+	cerr := bj.buider.BuildCache.UpdateCache(BuildCacheEntry{
 		BuildInfo: bi,
 		Error:     err,
 	})
+	if cerr != nil {
+		return cerr
+	}
 	if err != nil {
 		return err
 	}
