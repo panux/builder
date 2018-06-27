@@ -474,9 +474,13 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		return err
 	}
 
+	var bcerror string
+	if err != nil {
+		bcerror = err.Error()
+	}
 	cerr := bj.buider.BuildCache.UpdateCache(BuildCacheEntry{
 		BuildInfo: bi,
-		Error:     err,
+		Error:     bcerror,
 	})
 	if cerr != nil {
 		return cerr

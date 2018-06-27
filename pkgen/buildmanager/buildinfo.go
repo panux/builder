@@ -3,6 +3,7 @@ package buildmanager
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,7 +30,7 @@ type BuildInfo struct {
 // BuildCacheEntry is the JSON struct which may be stored in a BuildCache
 type BuildCacheEntry struct {
 	BuildInfo
-	Error error
+	Error string `json:"error"`
 }
 
 // BuildCache is an interface to check whether builds are up to date.
@@ -75,8 +76,11 @@ func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
 	}
 
 	//compare
+	if obce.Error != "" {
+		err = errors.New(obce.Error)
+	}
 	if b == obce.BuildInfo {
-		return true, obce.Error
+		return true, err
 	}
 	return false, nil
 }
