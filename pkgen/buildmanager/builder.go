@@ -376,13 +376,14 @@ func (bj *buildJob) ShouldRun() (bool, error) {
 		return false, err
 	}
 	il, err := bj.buider.BuildCache.CheckLatest(bi)
-	if err != nil {
-		return false, err
-	}
 	if il {
-		log.Printf("Caching build %q\n", bj.Name())
+		if err == nil {
+			log.Printf("Caching build %q\n", bj.Name())
+		} else {
+			log.Printf("Caching build %q with failure\n", bj.Name())
+		}
 	}
-	return !il, nil
+	return !il, err
 }
 
 func (bj *buildJob) Dependencies() ([]string, error) {
@@ -422,6 +423,12 @@ func dedup(in []string) []string {
 }
 
 func (bj *buildJob) Run(ctx context.Context) (err error) {
+	//get build info
+	bi, err := bj.buildInfo()
+	if err != nil {
+		return err
+	}
+
 	//set up loader
 	vns := vfs.NewNameSpace()
 	vns.Bind("/", bj.buider.SourceTree, filepath.Dir(bj.buider.index[bj.pkgname].Path), vfs.BindReplace)
@@ -463,16 +470,14 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		},
 		LogOut: log,
 	})
-	if err != nil {
+	if err != nil && err.Error() != "failed" {
 		return err
 	}
 
-	//store cache
-	bi, err := bj.buildInfo()
-	if err != nil {
-		return err
-	}
-	err = bj.buider.BuildCache.UpdateCache(bi)
+	err = bj.buider.BuildCache.UpdateCache(BuildCacheEntry{
+		BuildInfo: bi,
+		Error:     err,
+	})
 	if err != nil {
 		return err
 	}

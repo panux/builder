@@ -26,6 +26,12 @@ type BuildInfo struct {
 	Hash [sha256.Size]byte `json:"hash"`
 }
 
+// BuildCacheEntry is the JSON struct which may be stored in a BuildCache
+type BuildCacheEntry struct {
+	BuildInfo
+	Error error
+}
+
 // BuildCache is an interface to check whether builds are up to date.
 // Must be concurrency-safe.
 type BuildCache interface {
@@ -33,7 +39,7 @@ type BuildCache interface {
 	CheckLatest(BuildInfo) (bool, error)
 
 	// UpdateCache updates a cache entry for a BuildInfo.
-	UpdateCache(BuildInfo) error
+	UpdateCache(BuildCacheEntry) error
 }
 
 // jsonDirCache is a BuildCache which uses a dir of JSON blobs.
@@ -62,17 +68,20 @@ func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
 	defer f.Close()
 
 	//decode JSON
-	var obi BuildInfo
-	err = json.NewDecoder(f).Decode(&obi)
+	var obce BuildCacheEntry
+	err = json.NewDecoder(f).Decode(&obce)
 	if err != nil {
 		return false, err
 	}
 
 	//compare
-	return b == obi, nil
+	if b == obce.BuildInfo {
+		return true, obce.Error
+	}
+	return false, nil
 }
 
-func (jdc *jsonDirCache) UpdateCache(b BuildInfo) (err error) {
+func (jdc *jsonDirCache) UpdateCache(b BuildCacheEntry) (err error) {
 	//lock to avoid unsafe access
 	jdc.lck.Lock()
 	defer jdc.lck.Unlock()
