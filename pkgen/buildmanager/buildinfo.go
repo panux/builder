@@ -30,7 +30,7 @@ type BuildInfo struct {
 // BuildCacheEntry is the JSON struct which may be stored in a BuildCache
 type BuildCacheEntry struct {
 	BuildInfo
-	Error string `json:"error"`
+	Error string `json:"error,omitempty"`
 }
 
 // BuildCache is an interface to check whether builds are up to date.
