@@ -164,7 +164,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		Text:   "starting worker",
 		Stream: buildlog.StreamBuild,
 	})
-	wsctx, _ := context.WithTimeout(ctx, time.Minute)
+	wsctx, _ := context.WithTimeout(ctx, 5*time.Minute)
 	work, err := starter.Start(wsctx, br.Pkgen)
 	if err != nil {
 		log.Printf("failed to start worker: %q\n", err.Error())
