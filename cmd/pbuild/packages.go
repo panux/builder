@@ -68,6 +68,7 @@ func (ps *PackageStore) GetPkg(name string, arch pkgen.Arch, bootstrap bool) (le
 	}
 	inf, err := f.Stat()
 	if err != nil {
+		f.Close()
 		return 0, nil, "", err
 	}
 	return uint32(inf.Size()), f, "gz", nil
