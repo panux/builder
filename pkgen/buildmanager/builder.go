@@ -8,19 +8,32 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"gitlab.com/jadr2ddude/xgraph"
 	"gitlab.com/panux/builder/pkgen"
 	"golang.org/x/tools/godoc/vfs"
 )
 
-type hashCache struct {
-	m  map[hashCacheKey][sha256.Size]byte
-	pr PackageRetriever
+// HashCache is a cache of hashes
+type HashCache struct {
+	m    map[hashCacheKey]*hashCacheEntry
+	pr   PackageRetriever
+	scan uint64
+}
+
+// Prune removes hash cache entries that have not been used recently.
+func (hc *HashCache) Prune() {
+	for k, v := range hc.m {
+		if v.scan != hc.scan {
+			delete(hc.m, k)
+		}
+	}
 }
 
 type hashCacheKey struct {
@@ -29,7 +42,13 @@ type hashCacheKey struct {
 	bootstrap bool
 }
 
-func (hc *hashCache) hash(name string, arch pkgen.Arch, bootstrap bool) ([sha256.Size]byte, error) {
+type hashCacheEntry struct {
+	hash      [sha256.Size]byte
+	scan      uint64
+	timestamp time.Time
+}
+
+func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [sha256.Size]byte, err error) {
 	hck := hashCacheKey{
 		name:      name,
 		arch:      arch,
@@ -37,14 +56,37 @@ func (hc *hashCache) hash(name string, arch pkgen.Arch, bootstrap bool) ([sha256
 	}
 
 	//lookup in cache
-	if h, ok := hc.m[hck]; ok {
-		return h, nil
+	hce := hc.m[hck]
+	if hce != nil && hce.scan == hc.scan {
+		return hce.hash, nil
 	}
+	if hce == nil {
+		hce = new(hashCacheEntry)
+	}
+	hce.scan = hc.scan
 
 	//get package
 	_, r, _, err := hc.pr.GetPkg(name, arch, bootstrap)
 	if err != nil {
 		return [sha256.Size]byte{}, err
+	}
+	defer func() {
+		cerr := r.Close()
+		if cerr != nil && err == nil {
+			err = cerr
+			hash = [sha256.Size]byte{}
+		}
+	}()
+	//timestamp checking option
+	if f, ok := r.(*os.File); ok {
+		inf, err := f.Stat()
+		if err != nil {
+			return [sha256.Size]byte{}, err
+		}
+		t := inf.ModTime()
+		if t.Equal(hce.timestamp) {
+			return hce.hash, nil
+		}
 	}
 
 	//hash package
@@ -57,7 +99,7 @@ func (hc *hashCache) hash(name string, arch pkgen.Arch, bootstrap bool) ([sha256
 	copy(ha[:], h.Sum(nil))
 
 	//store to cache
-	hc.m[hck] = ha
+	hce.hash = ha
 
 	return ha, nil
 }
@@ -101,8 +143,8 @@ type Builder struct {
 	// InfoCallback is a callback run when build info is generated.
 	InfoCallback func(jobName string, info BuildInfo) error
 
-	// hc is a hash cache for packages
-	hc *hashCache
+	// HashCache is a hash cache for packages
+	HashCache *HashCache
 }
 
 // genBuildJob creates a *buildJob with the given package entry, targeting the given arch.
@@ -175,8 +217,8 @@ func (b *Builder) prepRPG() error {
 
 // GetGraph gets a build graph and a list of jobs.
 func (b *Builder) GetGraph() (*xgraph.Graph, []string, error) {
-	b.hc = &hashCache{
-		m:  make(map[hashCacheKey][sha256.Size]byte),
+	b.HashCache = &HashCache{
+		m:  make(map[hashCacheKey]*hashCacheEntry),
 		pr: b.PackageRetriever,
 	}
 	err := b.prepRPG()
@@ -190,10 +232,15 @@ func (b *Builder) GetGraph() (*xgraph.Graph, []string, error) {
 // Before starting the build, lcb is called with the list of targets.
 // The provided context supports cancellation.
 func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
-	b.hc = &hashCache{
-		m:  make(map[hashCacheKey][sha256.Size]byte),
-		pr: b.PackageRetriever,
+	if b.HashCache == nil {
+		b.HashCache = &HashCache{
+			m:  make(map[hashCacheKey]*hashCacheEntry),
+			pr: b.PackageRetriever,
+		}
+	} else {
+		b.HashCache.scan++
 	}
+	defer b.HashCache.Prune()
 	err := b.prepRPG()
 	if err != nil {
 		return err
@@ -326,7 +373,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 		//read and hash packages used
 		ent := &blents[i+len(bleh)]
 		err := func() (err error) {
-			h, err := bj.buider.hc.hash(parseJobName(v))
+			h, err := bj.buider.HashCache.hash(parseJobName(v))
 			ent.Hash = h[:]
 			ent.Name += ".tar"
 			return

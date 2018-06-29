@@ -111,12 +111,13 @@ func main() {
 
 		ticker := time.NewTicker(time.Minute * 15)
 		srvstop := srvctx.Done()
+		var hc *buildmanager.HashCache
 		defer ticker.Stop()
 		for {
 			rb := func() {
 				log.Println("Starting build. . .")
 				err := repo.WithBranch(srvctx, "beta", func(ctx context.Context, source vfs.FileSystem) error {
-					return (&buildmanager.Builder{
+					bldr := &buildmanager.Builder{
 						LogProvider:      logmanager,
 						Client:           bmcli,
 						BuildCache:       bcache,
@@ -128,7 +129,10 @@ func main() {
 						WorkRunner:       workpool,
 						EventHandler:     branch,
 						InfoCallback:     branch.infoCallback,
-					}).Build(ctx, branch.ListCallback)
+						HashCache:        hc,
+					}
+					defer func() { hc = bldr.HashCache }() //reuse hash cache
+					return bldr.Build(ctx, branch.ListCallback)
 				})
 				if err != nil {
 					fmt.Printf("Failed to build: %q\n", err.Error())
