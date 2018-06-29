@@ -14,13 +14,11 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"gitlab.com/jadr2ddude/xgraph"
+	"gitlab.com/panux/builder/internal/srvctx"
 	"gitlab.com/panux/builder/pkgen"
 	"gitlab.com/panux/builder/pkgen/buildmanager"
 	"golang.org/x/tools/godoc/vfs"
@@ -34,22 +32,6 @@ func main() {
 	flag.StringVar(&configfile, "config", "conf.json", "JSON format config file")
 	flag.Parse()
 	loadConfig(configfile)
-
-	//set up sync.WaitGroup for shutdown
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	//Set up server-wide context with SIGTERM cancellation
-	srvctx, srvcancel := context.WithCancel(context.Background())
-	sigch := make(chan os.Signal, 1)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-sigch
-		log.Println("Initiating shutdown")
-		srvcancel()
-	}()
-	signal.Notify(sigch, syscall.SIGTERM)
 
 	//Set up logging
 	logmanager := &LogManager{
@@ -71,7 +53,7 @@ func main() {
 	}
 
 	//Set up repo
-	repo, err := NewGitRepo(srvctx, Config.GitRepo, Config.GitDir)
+	repo, err := NewGitRepo(srvctx.Context, Config.GitRepo, Config.GitDir)
 	if err != nil {
 		log.Fatalf("failed to git clone: %q", err.Error())
 	}
@@ -93,7 +75,7 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to connect to build manager: %q\n", err.Error())
 			select {
-			case <-srvctx.Done():
+			case <-srvctx.Context.Done():
 				return
 			case <-time.NewTimer(time.Second * 3).C:
 			}
@@ -104,19 +86,19 @@ func main() {
 	log.Println("Connected to build manager")
 
 	//do build loop
-	wg.Add(1)
+	srvctx.Wait.Add(1)
 	startch := make(chan struct{})
 	go func() {
-		defer wg.Done()
+		defer srvctx.Wait.Done()
 
 		ticker := time.NewTicker(time.Minute * 15)
-		srvstop := srvctx.Done()
+		srvstop := srvctx.Context.Done()
 		var hc *buildmanager.HashCache
 		defer ticker.Stop()
 		for {
 			rb := func() {
 				log.Println("Starting build. . .")
-				err := repo.WithBranch(srvctx, "beta", func(ctx context.Context, source vfs.FileSystem) error {
+				err := repo.WithBranch(srvctx.Context, "beta", func(ctx context.Context, source vfs.FileSystem) error {
 					bldr := &buildmanager.Builder{
 						LogProvider:      logmanager,
 						Client:           bmcli,
@@ -137,7 +119,7 @@ func main() {
 				if err != nil {
 					fmt.Printf("Failed to build: %q\n", err.Error())
 				}
-				cmd := exec.CommandContext(srvctx, Config.AfterBuild[0], Config.AfterBuild[1:]...)
+				cmd := exec.CommandContext(srvctx.Context, Config.AfterBuild[0], Config.AfterBuild[1:]...)
 				cmd.Stderr = os.Stderr
 				cmd.Stdout = os.Stdout
 				err = cmd.Run()
@@ -189,28 +171,21 @@ func main() {
 		Addr:    Config.HTTPAddr,
 		Handler: router,
 	}
-	wg.Add(1)
+	srvctx.Wait.Add(1)
 	go func() { //run server in goroutine
-		defer wg.Done()
+		defer srvctx.Wait.Done()
 		log.Println("starting web server. . . ")
 		err := server.ListenAndServe()
 		if err != nil {
 			log.Printf("Web server failed: %q\n", err.Error())
-			close(sigch) //trigger shutdown
-		}
-	}()
-	wg.Add(1)
-	go func() { //trigger http shutdown on srvctx cancel
-		defer wg.Done()
-		<-srvctx.Done()
-		err := server.Shutdown(context.Background())
-		if err != nil {
-			log.Printf("shutdown error: %q\n", err.Error())
+			srvctx.Cancel()
 		}
 	}()
 
-	//wait for cancellation
-	<-srvctx.Done()
+	srvctx.HTTP(server)
+
+	//wait for Shutdown
+	srvctx.Wait.Wait()
 }
 
 // loadConfig reads the Config from the file at the given path.

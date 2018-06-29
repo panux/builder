@@ -12,13 +12,11 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"gitlab.com/panux/builder/internal"
+	"gitlab.com/panux/builder/internal/srvctx"
 	"gitlab.com/panux/builder/pkgen"
 	"gitlab.com/panux/builder/pkgen/buildlog"
 	"gitlab.com/panux/builder/pkgen/worker"
@@ -28,29 +26,11 @@ import (
 
 var starter *worker.Starter
 var auth [][]byte
-var ctx context.Context
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	defer log.Println("Shutdown complete.")
-
-	//waitgroup for background goroutines
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	//set up server-wide context
-	var srvcancel context.CancelFunc
-	ctx, srvcancel = context.WithCancel(context.Background())
-	sigch := make(chan os.Signal, 1)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-sigch
-		log.Println("Initiating shutdown")
-		srvcancel()
-	}()
-	signal.Notify(sigch, syscall.SIGTERM)
 
 	//parse flags
 	var addr string
@@ -80,30 +60,22 @@ func main() {
 	//http
 	http.HandleFunc("/build", handleBuild)
 	http.HandleFunc("/status", handleStatus)
-	srv := http.Server{
+	srv := &http.Server{
 		Addr: addr,
 	}
-	wg.Add(1)
+	srvctx.Wait.Add(1)
 	go func() { //run http server in seperate goroutine
-		defer wg.Done()
+		defer srvctx.Wait.Done()
 		err := srv.ListenAndServe()
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
-			srvcancel() //shutdown
+			srvctx.Cancel() //shutdown
 		}
 	}()
 
-	wg.Add(1)
-	go func() { //run http server shutdown
-		defer wg.Done()
-		<-ctx.Done()
-		err := srv.Shutdown(context.Background())
-		if err != nil {
-			log.Printf("HTTP shutdown error: %q\n", err.Error())
-		}
-	}()
+	srvctx.HTTP(srv)
 
-	<-ctx.Done() //wait for shutdown
+	srvctx.Wait.Wait()
 }
 
 // loadAuthKeys loads the authentication keys.
@@ -164,7 +136,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		Text:   "starting worker",
 		Stream: buildlog.StreamBuild,
 	})
-	wsctx, _ := context.WithTimeout(ctx, 5*time.Minute)
+	wsctx, _ := context.WithTimeout(srvctx.Context, 5*time.Minute)
 	work, err := starter.Start(wsctx, br.Pkgen)
 	if err != nil {
 		log.Printf("failed to start worker: %q\n", err.Error())
@@ -191,7 +163,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			err = work.RunCmd(
-				ctx,
+				srvctx.Context,
 				append(
 					[]string{"apk", "--no-cache", "add"},
 					br.Pkgen.BuildDependencies...,
@@ -201,7 +173,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 			)
 		}
 	} else {
-		err = doBootstrap(ctx, c, work, l)
+		err = doBootstrap(srvctx.Context, c, work, l)
 	}
 	if err != nil {
 		l.Log(buildlog.Line{
@@ -221,7 +193,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		Text:   "generating makefile",
 		Stream: buildlog.StreamBuild,
 	})
-	err = writeMakefile(ctx, br.Pkgen, work)
+	err = writeMakefile(srvctx.Context, br.Pkgen, work)
 	if err != nil {
 		l.Log(buildlog.Line{
 			Text:   "makefile generation failed",
@@ -240,7 +212,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		Text:   "loading sources",
 		Stream: buildlog.StreamBuild,
 	})
-	err = writeSourceTar(ctx, br.Pkgen, work, c)
+	err = writeSourceTar(srvctx.Context, br.Pkgen, work, c)
 	if err != nil {
 		l.Log(buildlog.Line{
 			Text:   fmt.Sprintf("source tar generation failed: %q", err.Error()),
@@ -260,7 +232,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		Stream: buildlog.StreamBuild,
 	})
 	err = work.RunCmd(
-		ctx,
+		srvctx.Context,
 		[]string{"make", "-j4", "-C", "/root/build", "pkgs.tar"},
 		nil,
 		worker.CmdOptions{LogOut: l},
@@ -288,7 +260,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Oh shoot, failed to send packages back: %q\n", err.Error())
 		return
 	}
-	err = work.ReadFile(ctx, "/root/build/pkgs.tar", pw)
+	err = work.ReadFile(srvctx.Context, "/root/build/pkgs.tar", pw)
 	cerr := pw.Close()
 	if cerr != nil && err == nil {
 		err = cerr

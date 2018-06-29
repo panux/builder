@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding/pem"
 	"errors"
 	"flag"
@@ -14,23 +13,19 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"gitlab.com/panux/builder/internal"
+	"gitlab.com/panux/builder/internal/srvctx"
 	"gitlab.com/panux/builder/pkgen/buildlog"
 )
 
 // authk is the authentication public key.
 var authk []byte
-
-// ctx is the server-wide context with cancellation.
-var ctx context.Context
 
 // lifech is a channel that keeps the node alive
 var lifech = make(chan struct{})
@@ -55,19 +50,6 @@ func main() {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	//set up server-wide context
-	var srvcancel context.CancelFunc
-	ctx, srvcancel = context.WithCancel(context.Background())
-	sigch := make(chan os.Signal, 1)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-sigch
-		log.Println("Initiating shutdown")
-		srvcancel()
-	}()
-	signal.Notify(sigch, syscall.SIGTERM)
-
 	//set up timeout self-destruct
 	wg.Add(1)
 	go func() {
@@ -75,10 +57,10 @@ func main() {
 		for {
 			timeout := time.NewTimer(time.Minute * 10)
 			select {
-			case <-ctx.Done():
+			case <-srvctx.Context.Done():
 				return
 			case <-timeout.C:
-				srvcancel()
+				srvctx.Cancel()
 			case <-lifech:
 			}
 			timeout.Stop()
@@ -123,7 +105,7 @@ func main() {
 		err := srv.ListenAndServeTLS(tlscertpath, tlskeypath)
 		if err != nil {
 			log.Printf("HTTPS server crashed: %q\n", err.Error())
-			srvcancel() //shutdown
+			srvctx.Cancel() //shutdown
 		}
 	}()
 	wg.Add(1)
@@ -132,28 +114,16 @@ func main() {
 		err := srv2.ListenAndServe()
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
-			srvcancel() //shutdown
+			srvctx.Cancel() //shutdown
 		}
 	}()
 
 	//do http server shutdowns
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		sctx, _ := context.WithTimeout(context.Background(), time.Second*15)
-		srv.Shutdown(sctx)
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		sctx, _ := context.WithTimeout(context.Background(), time.Second*15)
-		srv2.Shutdown(sctx)
-	}()
+	srvctx.HTTP(srv)
+	srvctx.HTTP(srv2)
 
 	//wait for server to be shut down
-	<-ctx.Done()
+	srvctx.Wait.Wait()
 }
 
 // loadAuthKey reads an authentication key and decodes it with PEM.
@@ -290,7 +260,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		select {
-		case <-ctx.Done():
+		case <-srvctx.Context.Done():
 			f.Close()
 		case <-fin:
 		}
@@ -363,7 +333,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		select {
-		case <-ctx.Done():
+		case <-srvctx.Context.Done():
 			f.Close()
 		case <-fin:
 		}
@@ -412,7 +382,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	log.Printf("accepted new command request: %v\n", cmdr)
 
 	//prepare command
-	cmd := exec.CommandContext(ctx, cmdr.Argv[0], cmdr.Argv[1:]...)
+	cmd := exec.CommandContext(srvctx.Context, cmdr.Argv[0], cmdr.Argv[1:]...)
 	cmd.Dir = "/"
 	if cmdr.Env != nil {
 		env := make([]string, len(cmdr.Env))
