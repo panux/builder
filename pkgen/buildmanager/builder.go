@@ -95,6 +95,7 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 		if t.Equal(hce.timestamp) {
 			return hce.hash, nil
 		}
+		hce.timestamp = t
 	}
 
 	//hash package
