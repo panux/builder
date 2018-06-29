@@ -62,8 +62,16 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 	}
 	if hce == nil {
 		hce = new(hashCacheEntry)
+		hc.m[hck] = hce
 	}
 	hce.scan = hc.scan
+
+	defer func() {
+		//flush cache entry on error
+		if err != nil {
+			delete(hc.m, hck)
+		}
+	}()
 
 	//get package
 	_, r, _, err := hc.pr.GetPkg(name, arch, bootstrap)
