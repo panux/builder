@@ -12,16 +12,16 @@ import (
 
 // PackageGenerator is the preprocessed pkgen.
 type PackageGenerator struct {
-	Packages          map[string]Package `json:"packages"` //list of packages generated
-	Arch              ArchSet            `json:"arch"`     //supported architectures (any means not sys-dependent, all means it will run on all)
-	HostArch          Arch               `json:"hostArch"` //selected host and build arch
+	Packages          map[string]Package `json:"packages"` // list of packages generated
+	Arch              ArchSet            `json:"arch"`     // supported architectures (any means not sys-dependent, all means it will run on all)
+	HostArch          Arch               `json:"hostArch"` // selected host and build arch
 	BuildArch         Arch               `json:"buildArch"`
-	Version           string             `json:"version"`                     //version of package (pre-processed)
-	Sources           []*url.URL         `json:"sources,omitempty"`           //list of source URLs
-	Script            []string           `json:"script,omitempty"`            //script for building
-	BuildDependencies []string           `json:"buildDependencies,omitempty"` //build dependencies
-	Builder           Builder            `json:"builder"`                     //builder (bootstrap, docker, default)
-	Cross             bool               `json:"cross,omitempty"`             //whether or not the package can be cross-compiled
+	Version           string             `json:"version"`                     // version of package (pre-processed)
+	Sources           []*url.URL         `json:"sources,omitempty"`           // list of source URLs
+	Script            []string           `json:"script,omitempty"`            // script for building
+	BuildDependencies []string           `json:"buildDependencies,omitempty"` // build dependencies
+	Builder           Builder            `json:"builder"`                     // builder (bootstrap, docker, default)
+	Cross             bool               `json:"cross,omitempty"`             // whether or not the package can be cross-compiled
 }
 
 // Preprocess preprocesses a RawPackageGenerator into a PackageGenerator.
@@ -81,7 +81,7 @@ func (rpg *RawPackageGenerator) tmpl(name string, in string, buildarch Arch, hos
 			)
 		},
 		"pkmv": func(file string, srcpkg string, destpkg string) string {
-			if strings.HasSuffix(file, "/") { //cut off trailing /
+			if strings.HasSuffix(file, "/") { // cut off trailing /
 				file = file[:len(file)-2]
 			}
 			dir, _ := filepath.Split(file)

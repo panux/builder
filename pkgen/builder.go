@@ -19,17 +19,17 @@ var ErrUnsupportedBuilder = errors.New("builder not supported")
 // An empty string is interpreted as BuilderDefault.
 func ParseBuilder(str string) (Builder, error) {
 	switch Builder(str) {
-	//supported builders
+	// supported builders
 	case BuilderDefault:
 	case BuilderDocker:
 	case BuilderBootstrap:
-	//default
+	// default
 	case "":
 		return BuilderDefault, nil
-	//deprecated builders
+	// deprecated builders
 	case "alpine", "panux":
 		return BuilderDefault, nil
-	//unsupported builder
+	// unsupported builder
 	default:
 		return "", ErrUnsupportedBuilder
 	}

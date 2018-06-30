@@ -1,4 +1,4 @@
-//Package pkgen processes Panux .pkgen packaging files
+// Package pkgen processes Panux .pkgen packaging files
 package pkgen
 
 import (
@@ -42,7 +42,7 @@ func (a Arch) Convert() string {
 // AutoTools returns the name used by autotools for the Arch.
 func (a Arch) AutoTools() string {
 	switch a {
-	case Archx86: //autotools treats x86 as "i*86"
+	case Archx86: // autotools treats x86 as "i*86"
 		return "i386"
 	default:
 		return a.String()

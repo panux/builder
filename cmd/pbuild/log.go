@@ -164,43 +164,43 @@ func (ls *LogSession) distributor() {
 	f:
 		for {
 			select {
-			case l, ok := <-ls.in: //handle incoming log line
-				//if log input is closed, shutdown
+			case l, ok := <-ls.in: // handle incoming log line
+				// if log input is closed, shutdown
 				if !ok {
 					break f
 				}
 
-				//add line to log
+				// add line to log
 				log = append(log, l)
 
-				//send line to subscribers
+				// send line to subscribers
 				for i := 0; i < len(subscribers); i++ {
 					if !trySend(l, subscribers[i]) {
-						//handle subscriber disconnect
+						// handle subscriber disconnect
 						subscribers = subscribers[:i+copy(subscribers[i:], subscribers[i+1:])]
 						i--
 					}
 				}
-			case s := <-subch: //handle subscription
-				//catch the subscriber up
+			case s := <-subch: // handle subscription
+				// catch the subscriber up
 				for _, l := range log {
 					if !trySend(l, s) {
-						//failed to catch them up
+						// failed to catch them up
 						continue
 					}
 				}
 
-				//add subscribers
+				// add subscribers
 				subscribers = append(subscribers, s)
 			}
 		}
 
-		//eject subscribers
+		// eject subscribers
 		for _, s := range subscribers {
 			close(s)
 		}
 
-		//save log to disk
+		// save log to disk
 		ls.err = ls.store.Save(ls.bi, log)
 	}()
 }
@@ -228,12 +228,12 @@ func (lslh *logSessionLogHandler) Close() error {
 		close(lslh.ch)
 	}()
 
-	//deregister session
+	// deregister session
 	lslh.lm.lck.Lock()
 	defer lslh.lm.lck.Unlock()
 	delete(lslh.lm.buildlookup, lslh.ls.bi.Hash)
 
-	//wait for session shutdown
+	// wait for session shutdown
 	lslh.ls.Wait()
 	return lslh.ls.err
 }
@@ -247,11 +247,11 @@ type LogManager struct {
 
 // Stream attempts to acquire a log stream.
 func (lm *LogManager) Stream(bi buildmanager.BuildInfo) (LogStream, error) {
-	//do locking
+	// do locking
 	lm.lck.Lock()
 	defer lm.lck.Unlock()
 
-	//look for a session
+	// look for a session
 	sess := lm.buildlookup[bi.Hash]
 	if sess != nil {
 		ls, err := sess.Stream()
@@ -261,7 +261,7 @@ func (lm *LogManager) Stream(bi buildmanager.BuildInfo) (LogStream, error) {
 		delete(lm.buildlookup, bi.Hash)
 	}
 
-	//pull off of disk
+	// pull off of disk
 	return lm.store.Stream(bi)
 }
 
@@ -283,10 +283,10 @@ func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
 		lm: lm,
 	}
 
-	//start distributor
+	// start distributor
 	ls.distributor()
 
-	//store session into manager
+	// store session into manager
 	lm.buildlookup[bi.Hash] = ls
 
 	return lh, nil
@@ -296,17 +296,17 @@ func (lm *LogManager) Log(bi buildmanager.BuildInfo) (buildlog.Handler, error) {
 //
 // The request takes the following query:
 //
-//		buildhash: the hexidecimal sha256 hash of the build
+// 		buildhash: the hexidecimal sha256 hash of the build
 //
 // The request responds with HTML5 SSE with the following message types:
 //
-//		start: indicates that event streaming has started (also sent on reconnect - starts from beginning)
+// 		start: indicates that event streaming has started (also sent on reconnect - starts from beginning)
 //
-//		log: contains a buildlog.Line in data
+// 		log: contains a buildlog.Line in data
 //
-//		terminate: contains an error causing termination; EOF means that it finished streaming the log
+// 		terminate: contains an error causing termination; EOF means that it finished streaming the log
 func (lm *LogManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//decode request
+	// decode request
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to parse form: %q", err.Error()), http.StatusBadRequest)
@@ -324,7 +324,7 @@ func (lm *LogManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var bi buildmanager.BuildInfo
 	copy(bi.Hash[:], hash)
 
-	//request LogStream
+	// request LogStream
 	ls, err := lm.Stream(bi)
 	if os.IsNotExist(err) {
 		http.Error(w, "Build not found", http.StatusNotFound)
@@ -336,39 +336,39 @@ func (lm *LogManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer ls.Close()
 
-	//start HTML5 Server Sent Events
+	// start HTML5 Server Sent Events
 	evs, err := sse.NewSender(w)
 	if err != nil {
 		return
 	}
 
-	//send log as events
+	// send log as events
 	for {
-		//get next log line
+		// get next log line
 		l, err := ls.NextLine()
 
-		//send termination
+		// send termination
 		if err != nil {
-			//notify client of error
+			// notify client of error
 			evs.SendEvent(sse.Event{
 				Name: "terminate",
 				Data: err.Error(),
 			})
 
-			//disconnect
+			// disconnect
 			return
 		}
 
-		//encode log line to JSON
+		// encode log line to JSON
 		dat, _ := json.Marshal(l)
 
-		//send line
+		// send line
 		err = evs.SendEvent(sse.Event{
 			Name: "log",
 			Data: string(dat),
 		})
 		if err != nil {
-			//connection error
+			// connection error
 			return
 		}
 	}

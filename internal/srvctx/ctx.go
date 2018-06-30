@@ -40,7 +40,7 @@ func init() {
 // HTTP shuts down the HTTP server on server shutdown (async).
 func HTTP(srv *http.Server) {
 	Wait.Add(1)
-	go func() { //run http server shutdown
+	go func() { // run http server shutdown
 		defer Wait.Done()
 		<-Context.Done()
 		err := srv.Shutdown(context.Background())

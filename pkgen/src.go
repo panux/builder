@@ -15,14 +15,14 @@ import (
 // Context may be used for cancellation of internal steps.
 // Closing of the io.Writer is necessary to garuntee cancellation.
 func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loader Loader, maxbuf uint) (err error) {
-	//handle cancellation errors
+	// handle cancellation errors
 	defer func() {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
 		}
 	}()
 
-	//prepare tar writer
+	// prepare tar writer
 	tw := tar.NewWriter(w)
 	defer func() {
 		cerr := tw.Close()
@@ -31,7 +31,7 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 		}
 	}()
 
-	//generate Makefile
+	// generate Makefile
 	buf := bytes.NewBuffer(nil)
 	_, err = pg.GenFullMakefile(DefaultVars).WriteTo(buf)
 	if err != nil {
@@ -50,7 +50,7 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 		return err
 	}
 
-	//generate package info files
+	// generate package info files
 	for _, inf := range pg.PackageInfos() {
 		var buf bytes.Buffer
 		_, err = inf.WriteTo(&buf)
@@ -71,9 +71,9 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 		}
 	}
 
-	//get and tar sources
+	// get and tar sources
 	for _, s := range pg.Sources {
-		//run Get
+		// run Get
 		var l int64
 		var r io.ReadCloser
 		l, r, err = loader.Get(ctx, s)
@@ -87,7 +87,7 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 			}
 		}()
 
-		//buffer files of unknown size in memory
+		// buffer files of unknown size in memory
 		if l < 1 {
 			b := bytes.NewBuffer(nil)
 			mr := maxReader{
@@ -102,7 +102,7 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 			r = ioutil.NopCloser(b)
 		}
 
-		//store source into tar
+		// store source into tar
 		err = tw.WriteHeader(&tar.Header{
 			Name: filepath.Base(s.Path),
 			Mode: 0600,

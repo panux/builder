@@ -50,11 +50,11 @@ type jsonDirCache struct {
 }
 
 func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
-	//lock to avoid unsafe access
+	// lock to avoid unsafe access
 	jdc.lck.Lock()
 	defer jdc.lck.Unlock()
 
-	//open file
+	// open file
 	suf := ""
 	if b.Bootstrap {
 		suf = "-bootstrap"
@@ -68,14 +68,14 @@ func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
 	}
 	defer f.Close()
 
-	//decode JSON
+	// decode JSON
 	var obce BuildCacheEntry
 	err = json.NewDecoder(f).Decode(&obce)
 	if err != nil {
 		return false, err
 	}
 
-	//compare
+	// compare
 	if obce.Error != "" {
 		err = errors.New(obce.Error)
 	}
@@ -86,11 +86,11 @@ func (jdc *jsonDirCache) CheckLatest(b BuildInfo) (bool, error) {
 }
 
 func (jdc *jsonDirCache) UpdateCache(b BuildCacheEntry) (err error) {
-	//lock to avoid unsafe access
+	// lock to avoid unsafe access
 	jdc.lck.Lock()
 	defer jdc.lck.Unlock()
 
-	//open file
+	// open file
 	suf := ""
 	if b.Bootstrap {
 		suf = "-bootstrap"
@@ -106,7 +106,7 @@ func (jdc *jsonDirCache) UpdateCache(b BuildCacheEntry) (err error) {
 		}
 	}()
 
-	//store JSON
+	// store JSON
 	return json.NewEncoder(f).Encode(b)
 }
 

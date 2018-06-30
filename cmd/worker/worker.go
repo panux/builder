@@ -46,11 +46,11 @@ func activityTrack() func() {
 func main() {
 	defer log.Println("Shutdown complete.")
 
-	//waitgroup for background goroutines
+	// waitgroup for background goroutines
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	//set up timeout self-destruct
+	// set up timeout self-destruct
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -67,7 +67,7 @@ func main() {
 		}
 	}()
 
-	//parse flags
+	// parse flags
 	var tlskeypath string
 	var tlscertpath string
 	var authkey string
@@ -78,21 +78,21 @@ func main() {
 	flag.StringVar(&addr, "https", ":443", "https server port")
 	flag.Parse()
 
-	//prepare auth
+	// prepare auth
 	var err error
 	authk, err = loadAuthKey(authkey)
 	if err != nil {
 		log.Fatalf("failed to load auth key: %q\n", err.Error())
 	}
 
-	//http setup
+	// http setup
 	http.HandleFunc("/mkdir", handleMkdir)
 	http.HandleFunc("/write", handleWriteFile)
 	http.HandleFunc("/read", handleReadFile)
 	http.HandleFunc("/run", handleRunCmd)
 	http.HandleFunc("/status", handleStatus)
 
-	//run http servers
+	// run http servers
 	srv := &http.Server{
 		Addr: addr,
 	}
@@ -105,7 +105,7 @@ func main() {
 		err := srv.ListenAndServeTLS(tlscertpath, tlskeypath)
 		if err != nil {
 			log.Printf("HTTPS server crashed: %q\n", err.Error())
-			srvctx.Cancel() //shutdown
+			srvctx.Cancel() // shutdown
 		}
 	}()
 	wg.Add(1)
@@ -114,15 +114,15 @@ func main() {
 		err := srv2.ListenAndServe()
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
-			srvctx.Cancel() //shutdown
+			srvctx.Cancel() // shutdown
 		}
 	}()
 
-	//do http server shutdowns
+	// do http server shutdowns
 	srvctx.HTTP(srv)
 	srvctx.HTTP(srv2)
 
-	//wait for server to be shut down
+	// wait for server to be shut down
 	srvctx.Wait.Wait()
 }
 
@@ -160,14 +160,14 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 // handleMkdir handles mkdir requests.
 func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	defer activityTrack()()
-	//check HTTP method
+	// check HTTP method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
 		log.Println("mkdir: unsupported method")
 		return
 	}
 
-	//parse request
+	// parse request
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("form parse error: %q", err.Error()), http.StatusBadRequest)
@@ -190,7 +190,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//execute request
+	// execute request
 	mkreq := req.Request.(*internal.MkdirRequest)
 	if mkreq.Parent {
 		err = os.MkdirAll(mkreq.Dir, 0644)
@@ -202,25 +202,25 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//write an OK
+	// write an OK
 	w.WriteHeader(http.StatusOK)
 }
 
 // handleWriteFile handles a file write request.
 func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	defer activityTrack()()
-	//WaitGroup for cleanup
+	// WaitGroup for cleanup
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	//check request method
+	// check request method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
 		log.Println("writeFile: unsupported method")
 		return
 	}
 
-	//read request
+	// read request
 	br := bufio.NewReader(r.Body)
 	reqdat, err := br.ReadBytes(0)
 	if err != nil {
@@ -240,7 +240,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 	}
 	fwreq := req.Request.(*internal.FileWriteRequest)
 
-	//open file
+	// open file
 	f, err := os.OpenFile(fwreq.Path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to open file: %q", err.Error()), http.StatusInternalServerError)
@@ -253,7 +253,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//handle cancellation
+	// handle cancellation
 	fin := make(chan struct{})
 	defer close(fin)
 	wg.Add(1)
@@ -266,7 +266,7 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//store file
+	// store file
 	_, err = io.Copy(f, r.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("write error: %q", err.Error()), http.StatusInternalServerError)
@@ -277,18 +277,18 @@ func handleWriteFile(w http.ResponseWriter, r *http.Request) {
 // handleReadFile handles file read requests.
 func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	defer activityTrack()()
-	//WaitGroup for cleanup
+	// WaitGroup for cleanup
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	//check request method
+	// check request method
 	if r.Method != http.MethodPost {
 		http.Error(w, "unsupported method", http.StatusMethodNotAllowed)
 		log.Println("readFile unsupported method")
 		return
 	}
 
-	//parse request
+	// parse request
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("form parse error: %q", err.Error()), http.StatusBadRequest)
@@ -313,7 +313,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	frreq := req.Request.(*internal.FileReadRequest)
 
-	//open file
+	// open file
 	f, err := os.Open(frreq.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -326,7 +326,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	//handle cancellation
+	// handle cancellation
 	fin := make(chan struct{})
 	defer close(fin)
 	wg.Add(1)
@@ -339,7 +339,7 @@ func handleReadFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//send file
+	// send file
 	io.Copy(w, f)
 }
 
@@ -351,10 +351,10 @@ var wsup = &websocket.Upgrader{
 // handleRunCmd handles command run requests.
 func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	defer activityTrack()()
-	//upgrade request to websocket
+	// upgrade request to websocket
 	c, err := wsup.Upgrade(w, r, nil)
 	if err != nil {
-		return //error sent by Upgrade
+		return // error sent by Upgrade
 	}
 	defer func() {
 		cerr := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
@@ -372,7 +372,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//decode request
+	// decode request
 	req, err := readWSReq(c, new(internal.CommandRequest))
 	if err != nil {
 		log.Printf("bad cmd request: %q\n", err.Error())
@@ -381,7 +381,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 	cmdr := req.Request.(*internal.CommandRequest)
 	log.Printf("accepted new command request: %v\n", cmdr)
 
-	//prepare command
+	// prepare command
 	cmd := exec.CommandContext(srvctx.Context, cmdr.Argv[0], cmdr.Argv[1:]...)
 	cmd.Dir = "/"
 	if cmdr.Env != nil {
@@ -395,7 +395,7 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		cmd.Env = env
 	}
 
-	//prepare logging
+	// prepare logging
 	lh := buildlog.NewMutexedLogHandler(&wsLogHandler{c: c})
 	lh = buildlog.NewMultiLogHandler(lh, buildlog.DefaultHandler)
 	defer lh.Close()
@@ -413,10 +413,10 @@ func handleRunCmd(w http.ResponseWriter, r *http.Request) {
 		cmd.Stderr = w
 	}
 
-	//execute command
+	// execute command
 	err = cmd.Run()
 
-	//send log termination message
+	// send log termination message
 	if err != nil {
 		lh.Log(buildlog.Line{
 			Text:   fmt.Sprintf("error: %q", err.Error()),

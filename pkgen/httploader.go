@@ -29,10 +29,10 @@ func (hl *httpLoader) SupportedProtocols() ([]string, error) {
 func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser, error) {
 	shasum := u.Query().Get("sha256sum")
 
-	//check that the scheme is supported
+	// check that the scheme is supported
 	switch u.Scheme {
 	case "http":
-		if shasum == "" { //insecure resource, needs hash
+		if shasum == "" { // insecure resource, needs hash
 			return -1, nil, ErrMissingHash
 		}
 	case "https":
@@ -40,20 +40,20 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 		return -1, nil, ErrUnsupportedProtocol
 	}
 
-	//decode hash if present
+	// decode hash if present
 	var shs []byte
 	if shasum != "" {
-		sum, err := hex.DecodeString(shasum) //decode sha256sum from hex
+		sum, err := hex.DecodeString(shasum) // decode sha256sum from hex
 		if err != nil {
 			return -1, nil, err
 		}
-		if len(sum) != sha256.Size { //check that it is the right length
+		if len(sum) != sha256.Size { // check that it is the right length
 			return -1, nil, errors.New("invalid hash: wrong length")
 		}
 		shs = sum
 	}
 
-	//prepare get request
+	// prepare get request
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return -1, nil, err
@@ -64,7 +64,7 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 		return -1, nil, err
 	}
 
-	//if it is hashed, download to memory and verify
+	// if it is hashed, download to memory and verify
 	if shs != nil {
 		if resp.ContentLength > int64(hl.maxbuf) {
 			return -1, nil, ErrExceedsMaxBuffer
@@ -86,7 +86,7 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 		return resp.ContentLength, ioutil.NopCloser(buf), nil
 	}
 
-	//return regular response
+	// return regular response
 	return resp.ContentLength, resp.Body, nil
 }
 

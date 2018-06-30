@@ -1,4 +1,4 @@
-//Package dlapi implements a client for gitlab.com/panux/builder/cmd/dlserver
+// Package dlapi implements a client for gitlab.com/panux/builder/cmd/dlserver
 package dlapi
 
 import (
@@ -31,7 +31,7 @@ func NewDlClient(u *url.URL, client *http.Client) *DlClient {
 
 // Status is the JSON sent by /status.
 type Status struct {
-	Status  string `json:"status"` //should be "running"
+	Status  string `json:"status"` // should be "running"
 	Version string `json:"version"`
 }
 

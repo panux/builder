@@ -32,7 +32,7 @@ func main() {
 
 	defer log.Println("Shutdown complete.")
 
-	//parse flags
+	// parse flags
 	var addr string
 	var namespace string
 	var authkeys string
@@ -41,7 +41,7 @@ func main() {
 	flag.StringVar(&authkeys, "auth", "/srv/authkeys.json", "JSON file containing authorized RSA auth keys")
 	flag.Parse()
 
-	//Prep Kubernetes client
+	// Prep Kubernetes client
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Fatalf("Kubernetes in cluster config failed: %q\n", err.Error())
@@ -51,25 +51,25 @@ func main() {
 		log.Fatalf("Failed to create ClientSet: %q\n", err.Error())
 	}
 
-	//Prep worker Starter
+	// Prep worker Starter
 	starter = worker.NewStarter(clientset, namespace)
 
-	//Load auth list
+	// Load auth list
 	loadAuthKeys(authkeys)
 
-	//http
+	// http
 	http.HandleFunc("/build", handleBuild)
 	http.HandleFunc("/status", handleStatus)
 	srv := &http.Server{
 		Addr: addr,
 	}
 	srvctx.Wait.Add(1)
-	go func() { //run http server in seperate goroutine
+	go func() { // run http server in seperate goroutine
 		defer srvctx.Wait.Done()
 		err := srv.ListenAndServe()
 		if err != nil {
 			log.Printf("HTTP server crashed: %q\n", err.Error())
-			srvctx.Cancel() //shutdown
+			srvctx.Cancel() // shutdown
 		}
 	}()
 
@@ -103,19 +103,19 @@ var wsup = &websocket.Upgrader{
 
 // handleBuild handles build requests (using websocket).
 func handleBuild(w http.ResponseWriter, r *http.Request) {
-	//upgrade to websocket
+	// upgrade to websocket
 	c, err := wsup.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 	defer c.Close()
 
-	//prep logger
+	// prep logger
 	var l buildlog.Handler
 	l = &wsLogHandler{c: c}
 	l = buildlog.NewMultiLogHandler(l, buildlog.DefaultHandler)
 
-	//load request
+	// load request
 	req, err := readWSReq(c, &internal.BuildRequest{})
 	if err != nil {
 		log.Printf("failed to read build request: %q\n", err.Error())
@@ -131,7 +131,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 	}
 	br := req.Request.(*internal.BuildRequest)
 
-	//start worker
+	// start worker
 	l.Log(buildlog.Line{
 		Text:   "starting worker",
 		Stream: buildlog.StreamBuild,
@@ -150,7 +150,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//install packages
+	// install packages
 	l.Log(buildlog.Line{
 		Text:   "installing packages",
 		Stream: buildlog.StreamBuild,
@@ -188,7 +188,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//write makefile
+	// write makefile
 	l.Log(buildlog.Line{
 		Text:   "generating makefile",
 		Stream: buildlog.StreamBuild,
@@ -207,7 +207,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send source tarball
+	// send source tarball
 	l.Log(buildlog.Line{
 		Text:   "loading sources",
 		Stream: buildlog.StreamBuild,
@@ -226,7 +226,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//run build
+	// run build
 	l.Log(buildlog.Line{
 		Text:   "executing build",
 		Stream: buildlog.StreamBuild,
@@ -250,7 +250,7 @@ func handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send packages back
+	// send packages back
 	l.Log(buildlog.Line{
 		Text:   "uploading packages",
 		Stream: buildlog.StreamBuild,

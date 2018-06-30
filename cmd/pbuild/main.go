@@ -27,13 +27,13 @@ import (
 func main() {
 	defer log.Println("Shutdown complete")
 
-	//load config
+	// load config
 	var configfile string
 	flag.StringVar(&configfile, "config", "conf.json", "JSON format config file")
 	flag.Parse()
 	loadConfig(configfile)
 
-	//Set up logging
+	// Set up logging
 	logmanager := &LogManager{
 		store: &LogStore{
 			path: Config.LogDir,
@@ -41,34 +41,34 @@ func main() {
 		buildlookup: make(map[[sha256.Size]byte]*LogSession),
 	}
 
-	//Set up build manager client
+	// Set up build manager client
 	bmcli := setupBMClient()
 
-	//Set up build cache
+	// Set up build cache
 	bcache := buildmanager.NewJSONDirCache(Config.CacheDir)
 
-	//Set up package storage
+	// Set up package storage
 	pkstore := &PackageStore{
 		dir: Config.OutputDir,
 	}
 
-	//Set up repo
+	// Set up repo
 	repo, err := NewGitRepo(srvctx.Context, Config.GitRepo, Config.GitDir)
 	if err != nil {
 		log.Fatalf("failed to git clone: %q", err.Error())
 	}
 
-	//Set up loader
+	// Set up loader
 	baseloader := pkgen.NewHTTPLoader(http.DefaultClient, Config.MaxBuf)
 
-	//Set up work pool
+	// Set up work pool
 	workpool := xgraph.NewWorkPool(Config.Parallel)
 	defer workpool.Close()
 
-	//branch state
+	// branch state
 	branch := &BranchStatus{BranchName: "beta"}
 
-	//wait for buildmanager to go online
+	// wait for buildmanager to go online
 	for bmonline := false; !bmonline; {
 		log.Println("Attempting to connect to build manager")
 		err := bmcli.Status()
@@ -85,7 +85,7 @@ func main() {
 	}
 	log.Println("Connected to build manager")
 
-	//do build loop
+	// do build loop
 	srvctx.Wait.Add(1)
 	startch := make(chan struct{})
 	go func() {
@@ -113,7 +113,7 @@ func main() {
 						InfoCallback:     branch.infoCallback,
 						HashCache:        hc,
 					}
-					defer func() { hc = bldr.HashCache }() //reuse hash cache
+					defer func() { hc = bldr.HashCache }() // reuse hash cache
 					return bldr.Build(ctx, branch.ListCallback)
 				})
 				if err != nil {
@@ -142,11 +142,11 @@ func main() {
 		startch <- struct{}{}
 	}()
 
-	//configure HTTP router
+	// configure HTTP router
 	router := http.DefaultServeMux
 	router.Handle("/api/branch", branch)
 	router.Handle("/api/log", logmanager)
-	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) { //status probe for Kubernetes
+	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) { // status probe for Kubernetes
 		err := bmcli.Status()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("build manager status error: %q", err.Error()), http.StatusInternalServerError)
@@ -166,13 +166,13 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 
-	//start HTTP server
+	// start HTTP server
 	server := &http.Server{
 		Addr:    Config.HTTPAddr,
 		Handler: router,
 	}
 	srvctx.Wait.Add(1)
-	go func() { //run server in goroutine
+	go func() { // run server in goroutine
 		defer srvctx.Wait.Done()
 		log.Println("starting web server. . . ")
 		err := server.ListenAndServe()
@@ -184,7 +184,7 @@ func main() {
 
 	srvctx.HTTP(server)
 
-	//wait for Shutdown
+	// wait for Shutdown
 	srvctx.Wait.Wait()
 }
 

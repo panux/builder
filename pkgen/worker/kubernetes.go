@@ -17,13 +17,13 @@ import (
 
 // workerPod is a struct containing info for manipulating the kubernetes pod.
 type workerPod struct {
-	//kubernetes Clientset to use when managing the Worker.
+	// kubernetes Clientset to use when managing the Worker.
 	kcl *kubernetes.Clientset
 
-	//pod that worker is in.
+	// pod that worker is in.
 	pod *v1.Pod
 
-	//secret that the worket SSL key is in.
+	// secret that the worket SSL key is in.
 	sslsecret *v1.Secret
 }
 
@@ -37,7 +37,7 @@ func (wp *workerPod) closePod() error {
 	return nil
 }
 
-//closeSecret deletes the ssl cert secret.
+// closeSecret deletes the ssl cert secret.
 func (wp *workerPod) closeSecret() error {
 	err := wp.kcl.CoreV1().Secrets(wp.sslsecret.Namespace).Delete(wp.sslsecret.Name, &metav1.DeleteOptions{})
 	if err != nil {
@@ -55,29 +55,29 @@ func (wp *workerPod) waitStart(ctx context.Context) error {
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
 	for {
-		//update status of pod
+		// update status of pod
 		p, err := wp.kcl.CoreV1().Pods(wp.pod.Namespace).Get(wp.pod.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		wp.pod = p
 
-		//check pod phase
+		// check pod phase
 		switch wp.pod.Status.Phase {
 		case v1.PodPending:
-			//still pending
+			// still pending
 		case v1.PodRunning:
-			return nil //its up!
+			return nil // its up!
 		case v1.PodSucceeded:
 			return ErrSuccess
 		case v1.PodFailed:
 			return fmt.Errorf("pod failed: %q", wp.pod.Status.Message)
 		default:
-			//log it and hope that it goes away eventually
+			// log it and hope that it goes away eventually
 			log.Printf("Unrecognized kubernetes pod phase: %q\n", string(wp.pod.Status.Phase))
 		}
 
-		//check for cancellation
+		// check for cancellation
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

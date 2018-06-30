@@ -18,20 +18,20 @@ import (
 
 // Status sends a status request to the worker.
 func (w *Worker) Status(ctx context.Context) (str string, err error) {
-	//calculate get URL
+	// calculate get URL
 	u, err := w.u.Parse("/status")
 	if err != nil {
 		return
 	}
 
-	//prepare request
+	// prepare request
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return "", err
 	}
 	req = req.WithContext(ctx)
 
-	//send request
+	// send request
 	resp, err := w.hcl.Do(req)
 	if err != nil {
 		return "", err
@@ -47,7 +47,7 @@ func (w *Worker) Status(ctx context.Context) (str string, err error) {
 		}
 	}()
 
-	//read response
+	// read response
 	dat, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -59,13 +59,13 @@ func (w *Worker) Status(ctx context.Context) (str string, err error) {
 // Mkdir makes a directory on the worker.
 // If mkparent is true, it will create parent directories.
 func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err error) {
-	//calculate post URL
+	// calculate post URL
 	u, err := w.u.Parse("/mkdir")
 	if err != nil {
 		return
 	}
 
-	//prepare request
+	// prepare request
 	rdat, err := (&internal.Request{
 		APIVersion: internal.APIVersion,
 		Request: internal.MkdirRequest{
@@ -77,7 +77,7 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 		return
 	}
 
-	//send post request
+	// send post request
 	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(url.Values{
 		"request": []string{string(rdat)},
 	}.Encode()))
@@ -104,7 +104,7 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 		return errors.New(string(dat))
 	}
 
-	//discard response
+	// discard response
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return
 }
@@ -127,13 +127,13 @@ func (fwr *fileWReader) Read(dat []byte) (int, error) {
 // WriteFile writes a file on the worker.
 // Data is copied from the io.Reader src.
 func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err error) {
-	//calculate post URL
+	// calculate post URL
 	u, err := w.u.Parse("/write")
 	if err != nil {
 		return
 	}
 
-	//prepare request
+	// prepare request
 	rdat, err := (&internal.Request{
 		APIVersion: internal.APIVersion,
 		Request: internal.FileWriteRequest{
@@ -143,9 +143,9 @@ func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err
 	if err != nil {
 		return
 	}
-	rdat = append(rdat, 0) //add null terminator
+	rdat = append(rdat, 0) // add null terminator
 
-	//send post request
+	// send post request
 	fwr := &fileWReader{
 		header: rdat,
 		r:      src,
@@ -170,7 +170,7 @@ func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err
 		return errors.New(resp.Status)
 	}
 
-	//discard response
+	// discard response
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	return
 }
@@ -178,13 +178,13 @@ func (w *Worker) WriteFile(ctx context.Context, path string, src io.Reader) (err
 // ReadFile reads a file from the worker.
 // The file contents are copied into dst.
 func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err error) {
-	//calculate post URL
+	// calculate post URL
 	u, err := w.u.Parse("/read")
 	if err != nil {
 		return
 	}
 
-	//prepare request
+	// prepare request
 	rdat, err := (&internal.Request{
 		APIVersion: internal.APIVersion,
 		Request: internal.FileReadRequest{
@@ -195,7 +195,7 @@ func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err 
 		return
 	}
 
-	//send post request
+	// send post request
 	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(url.Values{
 		"request": []string{string(rdat)},
 	}.Encode()))
@@ -218,7 +218,7 @@ func (w *Worker) ReadFile(ctx context.Context, path string, dst io.Writer) (err 
 		return errors.New(resp.Status)
 	}
 
-	//copy file data
+	// copy file data
 	_, err = io.Copy(dst, resp.Body)
 	return
 }
@@ -254,21 +254,21 @@ var ErrCmdFail = errors.New("command did not report success")
 // RunCmd runs a command on the worker.
 // If stdin is not set then stdin will not be connected.
 func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opts CmdOptions) (err error) {
-	//waitgroup
+	// waitgroup
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	//fill in blanks with defaults
+	// fill in blanks with defaults
 	opts = opts.defaults()
 
-	//enforce thread safety
+	// enforce thread safety
 	opts.LogOut = buildlog.NewMutexedLogHandler(opts.LogOut)
 
-	//check for success message
+	// check for success message
 	var builderr error
 	var success bool
 	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
-		if s != "success" { //forward error to build and return err
+		if s != "success" { // forward error to build and return err
 			builderr = errors.New(s)
 		} else {
 			success = true
@@ -287,14 +287,14 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		}
 	}()
 
-	//calculate target URL
+	// calculate target URL
 	u, err := w.u.Parse("/run")
 	if err != nil {
 		return
 	}
 	u.Scheme = "wss"
 
-	//prepare request
+	// prepare request
 	rdat, err := (&internal.Request{
 		APIVersion: internal.APIVersion,
 		Request: internal.CommandRequest{
@@ -309,7 +309,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		return
 	}
 
-	//dial websocket
+	// dial websocket
 	c, _, err := w.wscl.Dial(u.String(), nil)
 	if err != nil {
 		return
@@ -321,7 +321,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		}
 	}()
 
-	//start cancellation w/ close
+	// start cancellation w/ close
 	fin := make(chan struct{})
 	defer close(fin)
 	wg.Add(1)
@@ -334,13 +334,13 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		}
 	}()
 
-	//write request to websocket
+	// write request to websocket
 	err = c.WriteMessage(websocket.TextMessage, rdat)
 	if err != nil {
 		return
 	}
 
-	//do background stdin copy
+	// do background stdin copy
 	if stdin != nil {
 		swriter, err := c.NextWriter(websocket.BinaryMessage)
 		if err != nil {
@@ -354,7 +354,7 @@ func (w *Worker) RunCmd(ctx context.Context, argv []string, stdin io.Reader, opt
 		}()
 	}
 
-	//loop over incoming messages
+	// loop over incoming messages
 	for {
 		mt, dat, err := c.ReadMessage()
 		if err != nil {

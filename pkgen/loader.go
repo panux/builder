@@ -54,7 +54,7 @@ func (ml *multiLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadClose
 // If multiple loaders support the same protocol, the last one will be used.
 // If no loaders are input, NewMultiLoader will return nil.
 func NewMultiLoader(loaders ...Loader) (Loader, error) {
-	//generate map of scheme to Loader
+	// generate map of scheme to Loader
 	ldm := make(map[string]Loader)
 	for _, l := range loaders {
 		protos, err := l.SupportedProtocols()
@@ -66,7 +66,7 @@ func NewMultiLoader(loaders ...Loader) (Loader, error) {
 		}
 	}
 
-	//create a list of supported schemes
+	// create a list of supported schemes
 	pr := make([]string, len(ldm))
 	i := 0
 	for p := range ldm {
@@ -74,7 +74,7 @@ func NewMultiLoader(loaders ...Loader) (Loader, error) {
 		i++
 	}
 
-	//sort the scheme list for consistency
+	// sort the scheme list for consistency
 	sort.Strings(pr)
 	ml := new(multiLoader)
 	ml.loaders = ldm

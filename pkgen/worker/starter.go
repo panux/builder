@@ -26,8 +26,8 @@ import (
 
 // Starter is a struct which starts workers.
 type Starter struct {
-	kcl       *kubernetes.Clientset //kubernetes Clientset to use for starting worker pods
-	namespace string                //kubernetes namespace to start pods in
+	kcl       *kubernetes.Clientset // kubernetes Clientset to use for starting worker pods
+	namespace string                // kubernetes namespace to start pods in
 }
 
 // NewStarter returns a Starter with the given kubernetes clientset.
@@ -43,29 +43,29 @@ func NewStarter(kcl *kubernetes.Clientset, namespace string) *Starter {
 func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Worker, err error) {
 	podname := "panux-" + strings.Replace(namesgenerator.GetRandomName(0), "_", "-", -1)
 
-	//create worker pod struct
+	// create worker pod struct
 	wpod := &workerPod{kcl: s.kcl}
 	defer func() {
-		if err != nil { //cleanup pod if this failed
+		if err != nil { // cleanup pod if this failed
 			cerr := wpod.Close()
 			if cerr != nil && cerr != io.ErrClosedPipe {
-				//If this happens then a sysadmin will have to intervene
-				//I really cannot think of a better way to handle this now
+				// If this happens then a sysadmin will have to intervene
+				// I really cannot think of a better way to handle this now
 				log.Printf("Failed to close pod on error: %q\n", cerr.Error())
 			}
 		}
 	}()
 
-	//generate TLS cert
-	ctmpl, err := genCertTmpl(podname) //generate cert template
+	// generate TLS cert
+	ctmpl, err := genCertTmpl(podname) // generate cert template
 	if err != nil {
 		return nil, err
 	}
-	privkey, err := rsa.GenerateKey(rand.Reader, 4096) //generate RSA key (4096-bit)
+	privkey, err := rsa.GenerateKey(rand.Reader, 4096) // generate RSA key (4096-bit)
 	if err != nil {
 		return nil, err
 	}
-	cert, err := x509.CreateCertificate(rand.Reader, ctmpl, ctmpl, privkey.Public(), privkey) //create cert with template and key
+	cert, err := x509.CreateCertificate(rand.Reader, ctmpl, ctmpl, privkey.Public(), privkey) // create cert with template and key
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +78,13 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 		Bytes: cert,
 	})
 
-	//generate RSA auth key
+	// generate RSA auth key
 	authkey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return nil, err
 	}
 
-	//generate TLS/auth secret
+	// generate TLS/auth secret
 	sec := new(v1.Secret)
 	sec.Data = map[string][]byte{
 		"srvkey": pem.EncodeToMemory(&pem.Block{
@@ -104,7 +104,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	}
 	wpod.sslsecret = sec
 
-	//create pod
+	// create pod
 	pod, err := wpod.genPodSpec(pk, podname)
 	if err != nil {
 		return
@@ -115,7 +115,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 	}
 	wpod.pod = pod
 
-	//generate tls config
+	// generate tls config
 	tlsc := new(tls.Config)
 	tlsc.InsecureSkipVerify = true
 	tlsc.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
@@ -131,13 +131,13 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 		return errors.New("bad cert")
 	}
 
-	//wait for pod to start up
+	// wait for pod to start up
 	err = wpod.waitStart(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	//prepare clients
+	// prepare clients
 	hcl := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: tlsc,
@@ -147,7 +147,7 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 		TLSClientConfig: tlsc,
 	}
 
-	//build and test Worker
+	// build and test Worker
 	w = &Worker{
 		u: &url.URL{
 			Scheme: "https",
@@ -168,20 +168,20 @@ func (s *Starter) Start(ctx context.Context, pk *pkgen.PackageGenerator) (w *Wor
 
 // genCertTmpl generates a certificate template.
 func genCertTmpl(name string) (*x509.Certificate, error) {
-	//generate random serial number
+	// generate random serial number
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return nil, err
 	}
 
-	//certificate not valid before now
+	// certificate not valid before now
 	notBefore := time.Now()
 
-	//certificate valid for 12 hours
+	// certificate valid for 12 hours
 	notAfter := notBefore.Add(time.Hour * 12)
 
-	//generate cert
+	// generate cert
 	return &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{

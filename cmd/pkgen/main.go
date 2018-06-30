@@ -147,7 +147,7 @@ func main() {
 				if err != nil {
 					return cli.NewExitError(err, 65)
 				}
-				go func() { //do cancel w/ file f
+				go func() { // do cancel w/ file f
 					<-cctx.Done()
 					f.Close()
 				}()
@@ -164,7 +164,7 @@ func main() {
 					return cli.NewExitError(err, 65)
 				}
 				defer inf.Close()
-				go func() { //do cancel w/ inf
+				go func() { // do cancel w/ inf
 					<-cctx.Done()
 					inf.Close()
 				}()
@@ -217,7 +217,7 @@ func main() {
 				},
 			},
 			Action: func(ctx *cli.Context) (err error) {
-				//pre-checks
+				// pre-checks
 				if len(ctx.Args()) != 1 {
 					return cli.NewExitError("wrong number of arguments", 65)
 				}
@@ -228,13 +228,13 @@ func main() {
 				default:
 					return cli.NewExitError(fmt.Errorf("Unsupported extension %q in %q", ext, ctx.String("tar")), 65)
 				}
-				//load & preprocess pkgen
+				// load & preprocess pkgen
 				inf, err := os.Open(ctx.Args()[0])
 				if err != nil {
 					return cli.NewExitError(err, 65)
 				}
 				defer inf.Close()
-				go func() { //do cancel w/ inf
+				go func() { // do cancel w/ inf
 					<-cctx.Done()
 					inf.Close()
 				}()
@@ -250,7 +250,7 @@ func main() {
 				if err != nil {
 					return cli.NewExitError(err, 65)
 				}
-				//prep writer for tar
+				// prep writer for tar
 				tf, err := os.OpenFile(ctx.String("tar"), os.O_CREATE|os.O_WRONLY, 0600)
 				if err != nil {
 					return
@@ -289,7 +289,7 @@ func main() {
 				if err != nil {
 					return cli.NewExitError(err, 65)
 				}
-				//generate tar
+				// generate tar
 				err = pg.WriteSourceTar(cctx, w, l, ctx.Uint("maxbuf"))
 				return
 			},
@@ -337,7 +337,7 @@ func main() {
 				mfn := makefile.RawText("Makefile")
 				b.NewRule(makefile.RawText("all")).
 					AddDep(mfn)
-				b.NewRule(mfn). //extract Makefile from source tar
+				b.NewRule(mfn). // extract Makefile from source tar
 						AddDep(srctn).
 						NewCmd("tar -xf").
 						AddArg(makefile.Dep1).

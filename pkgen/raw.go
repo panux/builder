@@ -47,7 +47,7 @@ type RawPackageGenerator struct {
 	// Optional. Defaults to false.
 	Cross bool
 
-	//Data is a set of user-defined data.
+	// Data is a set of user-defined data.
 	Data map[string]interface{}
 }
 

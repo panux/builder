@@ -45,23 +45,23 @@ type Sig struct {
 // Sign converts the request to JSON and signs it, returning the signed data.
 // NOTE: modifies PublicKey field.
 func (r *Request) Sign(privkey *rsa.PrivateKey) ([]byte, error) {
-	//encode public key
+	// encode public key
 	r.PublicKey = x509.MarshalPKCS1PublicKey(&privkey.PublicKey)
 
-	//marshal Request JSON
+	// marshal Request JSON
 	dat, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
 	}
 
-	//sign JSON
+	// sign JSON
 	hash := sha256.Sum256(dat)
 	sig, err := rsa.SignPKCS1v15(rand.Reader, privkey, crypto.SHA256, hash[:])
 	if err != nil {
 		return nil, err
 	}
 
-	//marshal Sig
+	// marshal Sig
 	rdat, err := json.Marshal(Sig{
 		Dat:       dat,
 		Signature: sig,
@@ -80,27 +80,27 @@ var ErrKeyMismatch = errors.New("request key does not match signature key")
 // DecodeRequest decodes a request.
 // reqsub should be an appropriate container for the Request field of the Request.
 func DecodeRequest(raw string, reqsub interface{}) (*Request, error) {
-	//unmarshal Sig
+	// unmarshal Sig
 	var sig Sig
 	err := json.Unmarshal([]byte(raw), &sig)
 	if err != nil {
 		return nil, err
 	}
 
-	//unmarshal public key
+	// unmarshal public key
 	pubkey, err := x509.ParsePKCS1PublicKey(sig.Key)
 	if err != nil {
 		return nil, err
 	}
 
-	//validate signature
+	// validate signature
 	mhash := sha256.Sum256(sig.Dat)
 	err = rsa.VerifyPKCS1v15(pubkey, crypto.SHA256, mhash[:], sig.Signature)
 	if err != nil {
 		return nil, err
 	}
 
-	//unmarshal Request
+	// unmarshal Request
 	req := new(Request)
 	err = json.Unmarshal(sig.Dat, req)
 	if err != nil {
@@ -117,7 +117,7 @@ func DecodeRequest(raw string, reqsub interface{}) (*Request, error) {
 	}
 	req.Request = reqsub
 
-	//check for key mismatch
+	// check for key mismatch
 	if !bytes.Equal(req.PublicKey, sig.Key) {
 		return nil, ErrKeyMismatch
 	}

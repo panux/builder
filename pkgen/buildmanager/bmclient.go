@@ -61,14 +61,14 @@ type BuildOptions struct {
 
 // Status runs a status probe on the server.
 func (cli *Client) Status() error {
-	//determine request URL
+	// determine request URL
 	u, err := cli.u.Parse("/status")
 	if err != nil {
 		return err
 	}
 	u = cli.u.ResolveReference(u)
 
-	//send request
+	// send request
 	resp, err := http.Get(u.String())
 	if err != nil {
 		return err
@@ -86,14 +86,14 @@ func (cli *Client) Status() error {
 
 // Build builds a package.
 func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
-	//prep logging
+	// prep logging
 	if opts.LogOut == nil {
 		opts.LogOut = buildlog.DefaultHandler
 	}
 	var builderr error
 	var srverr bool
 	opts.LogOut = buildlog.InterceptMeta(opts.LogOut, func(s string) {
-		if s != "success" { //forward error to build and return err
+		if s != "success" { // forward error to build and return err
 			builderr = errors.New(s)
 		}
 	})
@@ -107,14 +107,14 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		}
 	}()
 
-	//determine request URL
+	// determine request URL
 	u, err := cli.u.Parse("/build")
 	if err != nil {
 		return
 	}
 	u.Scheme = "ws"
 
-	//prepare request
+	// prepare request
 	rdat, err := (&internal.Request{
 		APIVersion: internal.APIVersion,
 		Request: internal.BuildRequest{
@@ -125,7 +125,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		return
 	}
 
-	//connect to server
+	// connect to server
 	c, _, err := cli.wscl.Dial(u.String(), nil)
 	if err != nil {
 		return
@@ -137,7 +137,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		}
 	}()
 
-	//handle errors from goroutines
+	// handle errors from goroutines
 	var cancelled bool
 	var procreaderr error
 	defer func() {
@@ -148,16 +148,16 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 			err = procreaderr
 		}
 	}()
-	//do WaitGroup
+	// do WaitGroup
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	//setup context
+	// setup context
 	ctx := opts.Context
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	//handle cancellation
+	// handle cancellation
 	stopch := make(chan struct{})
 	defer close(stopch)
 	wg.Add(1)
@@ -165,24 +165,24 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		defer wg.Done()
 		select {
 		case <-ctx.Done():
-			c.Close() //close to cancel I/O
+			c.Close() // close to cancel I/O
 			cancelled = true
 		case <-stopch:
 		}
 	}()
 
-	//start processing output in background
+	// start processing output in background
 	wg.Add(1)
 	go procWsRead(c, opts, &wg, &procreaderr)
 
-	//send request
+	// send request
 	err = wsSendRequest(c, rdat)
 	if err != nil {
 		srverr = true
 		return
 	}
 
-	//send packages
+	// send packages
 	if !bjr.pk.Builder.IsBootstrap() {
 		err = wsSendPackages(c, bjr)
 		if err != nil {
@@ -191,7 +191,7 @@ func (cli *Client) Build(bjr *BuildJobRequest, opts BuildOptions) (err error) {
 		}
 	}
 
-	//send souce tar
+	// send souce tar
 	err = wsSendSources(ctx, c, bjr)
 	if err != nil {
 		srverr = true

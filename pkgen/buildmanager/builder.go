@@ -55,7 +55,7 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 		bootstrap: bootstrap,
 	}
 
-	//lookup in cache
+	// lookup in cache
 	hce := hc.m[hck]
 	if hce != nil && hce.scan == hc.scan {
 		return hce.hash, nil
@@ -67,13 +67,13 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 	hce.scan = hc.scan
 
 	defer func() {
-		//flush cache entry on error
+		// flush cache entry on error
 		if err != nil {
 			delete(hc.m, hck)
 		}
 	}()
 
-	//get package
+	// get package
 	_, r, _, err := hc.pr.GetPkg(name, arch, bootstrap)
 	if err != nil {
 		return [sha256.Size]byte{}, err
@@ -85,7 +85,7 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 			hash = [sha256.Size]byte{}
 		}
 	}()
-	//timestamp checking option
+	// timestamp checking option
 	if f, ok := r.(*os.File); ok {
 		inf, err := f.Stat()
 		if err != nil {
@@ -98,7 +98,7 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 		hce.timestamp = t
 	}
 
-	//hash package
+	// hash package
 	h := sha256.New()
 	_, err = io.Copy(h, r)
 	if err != nil {
@@ -107,7 +107,7 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 	var ha [sha256.Size]byte
 	copy(ha[:], h.Sum(nil))
 
-	//store to cache
+	// store to cache
 	hce.hash = ha
 
 	return ha, nil
@@ -159,10 +159,10 @@ type Builder struct {
 // genBuildJob creates a *buildJob with the given package entry, targeting the given arch.
 // If bootstrap is true, the package will be built as bootstrap.
 func (b *Builder) genBuildJob(ent *RawPkent, arch pkgen.Arch, bootstrap bool) *buildJob {
-	//get name
+	// get name
 	name := filepath.Base(filepath.Dir(ent.Path))
 
-	//preprocess pkgen
+	// preprocess pkgen
 	pk, err := ent.Pkgen.Preprocess(arch, arch, bootstrap)
 	if err != nil {
 		log.Printf("Preprocessing error for %v-%v-%v: %s\n", ent, arch, bootstrap, err.Error())
@@ -278,13 +278,13 @@ type buildJob struct {
 	// pkgname is the name of the package being built.
 	pkgname string
 
-	//bootstrap indicates whether this is bootstrapped before build.
+	// bootstrap indicates whether this is bootstrapped before build.
 	bootstrapped bool
 
-	//pk is the *pkgen.PackageGenerator being built.
+	// pk is the *pkgen.PackageGenerator being built.
 	pk *pkgen.PackageGenerator
 
-	//err is a preprocessing error
+	// err is a preprocessing error
 	err error
 }
 
@@ -379,7 +379,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 		blents[i].Hash = h
 	}
 	for i, v := range pkhs {
-		//read and hash packages used
+		// read and hash packages used
 		ent := &blents[i+len(bleh)]
 		err := func() (err error) {
 			h, err := bj.buider.HashCache.hash(parseJobName(v))
@@ -447,7 +447,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 		return []string{}, bj.err
 	}
 	if bj.pk.Builder.IsBootstrap() {
-		//no deps
+		// no deps
 		return []string{}, nil
 	}
 	pkfs, err := bj.pkgDeps()
@@ -479,13 +479,13 @@ func dedup(in []string) []string {
 }
 
 func (bj *buildJob) Run(ctx context.Context) (err error) {
-	//get build info
+	// get build info
 	bi, err := bj.buildInfo()
 	if err != nil {
 		return err
 	}
 
-	//set up loader
+	// set up loader
 	vns := vfs.NewNameSpace()
 	vns.Bind("/", bj.buider.SourceTree, filepath.Dir(bj.buider.index[bj.pkgname].Path), vfs.BindReplace)
 	load, err := pkgen.NewMultiLoader(pkgen.NewFileLoader(vns), bj.buider.BaseLoader)
@@ -493,7 +493,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	//create the BuildJobRequest
+	// create the BuildJobRequest
 	bdeps, err := bj.pkgDeps()
 	if err != nil {
 		return err
@@ -503,7 +503,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	//prep logging
+	// prep logging
 	inf, err := bj.buildInfo()
 	if err != nil {
 		return err
@@ -519,7 +519,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		}
 	}()
 
-	//run build
+	// run build
 	err = bj.buider.Client.Build(bjr, BuildOptions{
 		Out: func(name string, r io.Reader) error {
 			return bj.buider.Output.Store(inf, name, ioutil.NopCloser(r))

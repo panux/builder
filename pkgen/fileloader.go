@@ -32,7 +32,7 @@ func (fl fileLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser,
 	return l, f, nil
 }
 
-//NewFileLoader returns a new Loader which loads files from the given VFS.
+// NewFileLoader returns a new Loader which loads files from the given VFS.
 func NewFileLoader(fs vfs.FileSystem) Loader {
 	return fileLoader{fs: fs}
 }

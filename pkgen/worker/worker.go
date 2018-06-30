@@ -1,4 +1,4 @@
-//Package worker is a client package for the build worker
+// Package worker is a client package for the build worker
 package worker
 
 import (
@@ -13,11 +13,11 @@ import (
 // Worker is a worker API client.
 // It is not concurrency safe.
 type Worker struct {
-	u       *url.URL          //URL of worker
-	hcl     *http.Client      //http client to use when making HTTP requests
-	wscl    *websocket.Dialer //websocket client to use when making websocket requests
-	authkey *rsa.PrivateKey   //key to sign request with
-	pod     *workerPod        //worker pod kubernetes data
+	u       *url.URL          // URL of worker
+	hcl     *http.Client      // http client to use when making HTTP requests
+	wscl    *websocket.Dialer // websocket client to use when making websocket requests
+	authkey *rsa.PrivateKey   // key to sign request with
+	pod     *workerPod        // worker pod kubernetes data
 }
 
 // Close closes a worker (killing the pod and deleting the SSL secret).

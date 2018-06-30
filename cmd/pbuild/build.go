@@ -78,7 +78,7 @@ func (bs *BranchStatus) OnError(job string, err error) {
 
 // ListCallback can be used for listcallback in the Build func.
 func (bs *BranchStatus) ListCallback(list []string) error {
-	//generate build map
+	// generate build map
 	builds := make(map[string]*BuildStatus)
 	for _, b := range list {
 		if b == "all" {
@@ -93,11 +93,11 @@ func (bs *BranchStatus) ListCallback(list []string) error {
 		}
 	}
 
-	//lock
+	// lock
 	bs.lck.Lock()
 	defer bs.lck.Unlock()
 
-	//swap in builds
+	// swap in builds
 	bs.Builds = builds
 
 	return nil
@@ -127,12 +127,12 @@ type BuildState string
 const (
 	// BuildStateWaiting is a BuildState indicating that the build has not yet been queued.
 	BuildStateWaiting BuildState = "waiting"
-	//BuildStateQueued is a BuildState indicating that the build has been queued.
+	// BuildStateQueued is a BuildState indicating that the build has been queued.
 	BuildStateQueued BuildState = "queued"
-	//BuildStateRunning is a BuildState indicating that the build is running.
+	// BuildStateRunning is a BuildState indicating that the build is running.
 	BuildStateRunning BuildState = "running"
-	//BuildStateFinished is a BuildState indicating that the build has finished.
+	// BuildStateFinished is a BuildState indicating that the build has finished.
 	BuildStateFinished BuildState = "finished"
-	//BuildStateFailed is a BuildState indicating that the build has failed.
+	// BuildStateFailed is a BuildState indicating that the build has failed.
 	BuildStateFailed BuildState = "failed"
 )

@@ -43,7 +43,7 @@ func (rpi RawPackageIndex) DepWalker() DepWalker {
 
 // List gets a list of packages.
 func (rpi RawPackageIndex) List() []string {
-	//get name list
+	// get name list
 	names := make([]string, len(rpi))
 	i := 0
 	for _, v := range rpi {
@@ -51,10 +51,10 @@ func (rpi RawPackageIndex) List() []string {
 		i++
 	}
 
-	//sort name list
+	// sort name list
 	sort.Strings(names)
 
-	//dedup name list
+	// dedup name list
 	for i = 1; i < len(names); {
 		if names[i] == names[i-1] {
 			names = names[:i+copy(names[i:], names[i+1:])]
