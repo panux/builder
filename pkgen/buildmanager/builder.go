@@ -85,9 +85,11 @@ func (hc *HashCache) hash(name string, arch pkgen.Arch, bootstrap bool) (hash [s
 			hash = [sha256.Size]byte{}
 		}
 	}()
+
 	// timestamp checking option
 	if f, ok := r.(*os.File); ok {
-		inf, err := f.Stat()
+		var inf os.FileInfo
+		inf, err = f.Stat()
 		if err != nil {
 			return [sha256.Size]byte{}, err
 		}
@@ -338,14 +340,40 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	return pkfs, nil
 }
 
+func hashVFS(fs vfs.FileSystem, path string) (dat []byte, err error) {
+	f, err := fs.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		cerr := f.Close()
+		if cerr != nil && err == nil {
+			err = cerr
+			dat = nil
+		}
+	}()
+	h := sha256.New()
+	_, err = io.Copy(h, f)
+	if err != nil {
+		return nil, err
+	}
+	return h.Sum(nil), nil
+}
+
 // hash gets a hash of all of the inputs of a build.
 func (bj *buildJob) hash() ([]byte, error) {
-	bleh := []string{}
+	// filter for local file sources
+	sources := []string{}
 	for _, v := range bj.pk.Sources {
 		if v.Scheme == "file" {
-			bleh = append(bleh, filepath.Join(filepath.Dir(bj.buider.index[bj.pkgname].Path), filepath.Clean(v.Path)))
+			sources = append(sources, filepath.Join(
+				filepath.Dir(bj.buider.index[bj.pkgname].Path),
+				filepath.Clean(v.Path),
+			))
 		}
 	}
+
+	// list packages that are build dependencies
 	pkhs := []string{}
 	if !bj.pk.Builder.IsBootstrap() {
 		pkfs, err := bj.Dependencies()
@@ -354,52 +382,46 @@ func (bj *buildJob) hash() ([]byte, error) {
 		}
 		pkhs = pkfs
 	}
-	blents := make([]struct {
+
+	// create table of source hashes
+	hashents := make([]struct {
 		Name string `json:"name"`
 		Hash []byte `json:"hash"`
-	}, len(bleh)+len(pkhs)+1)
-	for i, v := range bleh {
-		blents[i].Name = filepath.Base(v)
-		h, err := func() ([]byte, error) {
-			f, err := bj.buider.SourceTree.Open(v)
-			if err != nil {
-				return nil, err
-			}
-			defer f.Close()
-			h := sha256.New()
-			_, err = io.Copy(h, f)
-			if err != nil {
-				return nil, err
-			}
-			return h.Sum(nil), nil
-		}()
+	}, len(sources)+len(pkhs)+1)
+
+	// hash file sources
+	for i, v := range sources {
+		hashents[i].Name = filepath.Base(v)
+		h, err := hashVFS(bj.buider.SourceTree, v)
 		if err != nil {
 			return nil, err
 		}
-		blents[i].Hash = h
+		hashents[i].Hash = h
 	}
+
+	// hash build depency packages
 	for i, v := range pkhs {
-		// read and hash packages used
-		ent := &blents[i+len(bleh)]
-		err := func() (err error) {
-			h, err := bj.buider.HashCache.hash(parseJobName(v))
-			ent.Hash = h[:]
-			ent.Name += ".tar"
-			return
-		}()
+		ent := &hashents[i+len(sources)]
+		h, err := bj.buider.HashCache.hash(parseJobName(v))
+		ent.Hash = h[:]
+		ent.Name += ".tar"
 		if err != nil {
 			return nil, err
 		}
 	}
-	blents[len(bleh)+len(pkhs)].Name = "pkgen.yaml"
+
+	// add entry for the preprocessed pkgen
+	hashents[len(sources)+len(pkhs)].Name = "pkgen.yaml"
 	pkh := sha256.New()
 	err := json.NewEncoder(pkh).Encode(bj.pk)
 	if err != nil {
 		return nil, err
 	}
-	blents[len(bleh)+len(pkhs)].Hash = pkh.Sum(nil)
+	hashents[len(sources)+len(pkhs)].Hash = pkh.Sum(nil)
+
+	// calculate final hash
 	oh := sha256.New()
-	err = json.NewEncoder(oh).Encode(blents)
+	err = json.NewEncoder(oh).Encode(hashents)
 	if err != nil {
 		return nil, err
 	}
@@ -530,6 +552,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 		return err
 	}
 
+	// update cache
 	var bcerror string
 	if err != nil {
 		bcerror = err.Error()
@@ -541,10 +564,10 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	if cerr != nil {
 		return cerr
 	}
+
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

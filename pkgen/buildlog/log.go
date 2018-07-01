@@ -17,10 +17,13 @@ type Stream uint8
 const (
 	// StreamStdout is a LogStream for stdout.
 	StreamStdout Stream = 1
+
 	// StreamStderr is a LogStream for stderr.
 	StreamStderr Stream = 2
+
 	// StreamBuild is a LogStream for info from the build system.
 	StreamBuild Stream = 3
+
 	// StreamMeta is a LogStream for build metadata.
 	StreamMeta Stream = 4
 )
@@ -29,12 +32,16 @@ func (s Stream) String() string {
 	switch s {
 	case StreamStdout:
 		return "stdout"
+
 	case StreamStderr:
 		return "stderr"
+
 	case StreamBuild:
 		return "build"
+
 	case StreamMeta:
 		return "meta"
+
 	default:
 		return "invalid"
 	}
@@ -42,7 +49,10 @@ func (s Stream) String() string {
 
 // Line is a line of log output.
 type Line struct {
-	Text   string `json:"text"`
+	// Text is the text of the log line.
+	Text string `json:"text"`
+
+	// Stream is the stream over which the log line was recieved.
 	Stream Stream `json:"stream"`
 }
 
@@ -56,7 +66,7 @@ type Handler interface {
 	io.Closer
 }
 
-// goLogHandler is a LogHandler which uses a go builtin logger
+// goLogHandler is a LogHandler which uses a go "log".Logger
 type goLogHandler struct {
 	l *log.Logger
 }
@@ -70,18 +80,18 @@ func (glh *goLogHandler) Close() error {
 	return nil
 }
 
-// StdLogHandler creates a LogHandler which wraps a go stdlib logger.
+// StdLogHandler creates a Handler which wraps a go stdlib logger.
 // For this logger, Close is a no-op.
 func StdLogHandler(l *log.Logger) Handler {
 	return &goLogHandler{l}
 }
 
-// DefaultHandler is the default LogHandler.
+// DefaultHandler is the default Handler.
 // It logs to stderr.
 var DefaultHandler = StdLogHandler(log.New(os.Stderr, "", log.LstdFlags))
 
 // NewLogWriter returns an io.WriteCloser that is logged.
-// The LogHandler must be mutexed if it is also used by anything else.
+// The Handler must be mutexed if it is also used by anything else.
 // Spawns a goroutine.
 func NewLogWriter(lh Handler, stream Stream) io.WriteCloser {
 	piper, pipew := io.Pipe()
@@ -154,11 +164,12 @@ func (mlh *mutexedLogHandler) Close() error {
 	return mlh.lh.Close()
 }
 
-// NewMutexedLogHandler returns a LogHandler which is thread-safe.
+// NewMutexedLogHandler returns a Handler which is thread-safe.
 func NewMutexedLogHandler(handler Handler) Handler {
 	return &mutexedLogHandler{lh: handler}
 }
 
+// metaInterceptor is a log handler that intercepts the meta stream and passes it to a function.
 type metaInterceptor struct {
 	cb func(string)
 	lh Handler
@@ -176,7 +187,7 @@ func (mi *metaInterceptor) Close() error {
 	return mi.lh.Close()
 }
 
-// InterceptMeta returrns a LogHandler which executes a callback instead of logging messages in StreamMeta.
+// InterceptMeta returrns a Handler which executes a callback instead of logging messages in StreamMeta.
 func InterceptMeta(h Handler, callback func(string)) Handler {
 	return &metaInterceptor{
 		cb: callback,
@@ -184,6 +195,7 @@ func InterceptMeta(h Handler, callback func(string)) Handler {
 	}
 }
 
+// multiLogger is a Handler that logs to multiple Handlers.
 type multiLogger []Handler
 
 func (ml multiLogger) Log(ll Line) error {
@@ -206,7 +218,7 @@ func (ml multiLogger) Close() error {
 	return nil
 }
 
-// NewMultiLogHandler returns a LogHandler that logs to all given handlers.
+// NewMultiLogHandler returns a Handler that logs to all given handlers.
 func NewMultiLogHandler(handlers ...Handler) Handler {
 	return multiLogger(handlers)
 }

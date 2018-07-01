@@ -23,16 +23,20 @@ func ParseBuilder(str string) (Builder, error) {
 	case BuilderDefault:
 	case BuilderDocker:
 	case BuilderBootstrap:
+
 	// default
 	case "":
 		return BuilderDefault, nil
+
 	// deprecated builders
 	case "alpine", "panux":
 		return BuilderDefault, nil
+
 	// unsupported builder
 	default:
 		return "", ErrUnsupportedBuilder
 	}
+
 	return Builder(str), nil
 }
 

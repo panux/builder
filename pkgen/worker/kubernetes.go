@@ -39,7 +39,9 @@ func (wp *workerPod) closePod() error {
 
 // closeSecret deletes the ssl cert secret.
 func (wp *workerPod) closeSecret() error {
-	err := wp.kcl.CoreV1().Secrets(wp.sslsecret.Namespace).Delete(wp.sslsecret.Name, &metav1.DeleteOptions{})
+	err := wp.kcl.CoreV1().
+		Secrets(wp.sslsecret.Namespace).
+		Delete(wp.sslsecret.Name, &metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -67,7 +69,7 @@ func (wp *workerPod) waitStart(ctx context.Context) error {
 		case v1.PodPending:
 			// still pending
 		case v1.PodRunning:
-			return nil // its up!
+			return nil // it is up!
 		case v1.PodSucceeded:
 			return ErrSuccess
 		case v1.PodFailed:

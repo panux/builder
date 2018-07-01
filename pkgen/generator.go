@@ -12,16 +12,45 @@ import (
 
 // PackageGenerator is the preprocessed pkgen.
 type PackageGenerator struct {
-	Packages          map[string]Package `json:"packages"` // list of packages generated
-	Arch              ArchSet            `json:"arch"`     // supported architectures (any means not sys-dependent, all means it will run on all)
-	HostArch          Arch               `json:"hostArch"` // selected host and build arch
-	BuildArch         Arch               `json:"buildArch"`
-	Version           string             `json:"version"`                     // version of package (pre-processed)
-	Sources           []*url.URL         `json:"sources,omitempty"`           // list of source URLs
-	Script            []string           `json:"script,omitempty"`            // script for building
-	BuildDependencies []string           `json:"buildDependencies,omitempty"` // build dependencies
-	Builder           Builder            `json:"builder"`                     // builder (bootstrap, docker, default)
-	Cross             bool               `json:"cross,omitempty"`             // whether or not the package can be cross-compiled
+	// Package is a list of packages generated and their dependencies.
+	// Required.
+	Packages map[string]Package `json:"packages"`
+
+	// Arch is a list of supported architectures.
+	// Optional. Defualts to nil.
+	Arch ArchSet `json:"arch"`
+
+	// HostArch is the Arch which the package will be compiled on.
+	// Required.
+	HostArch Arch `json:"hostArch"`
+
+	// BuildArch is the Arch which the package will be compiled for.
+	// Required.
+	BuildArch Arch `json:"buildArch"`
+
+	// Version is the version of the package built.
+	// Required.
+	Version string `json:"version"`
+
+	// Sources is a list of URLs for sources.
+	// Optional.
+	Sources []*url.URL `json:"sources,omitempty"`
+
+	// Script is the script for building the package.
+	// Optional.
+	Script []string `json:"script,omitempty"`
+
+	// BuildDependencies is a set of packages required for compilation.
+	// Optional.
+	BuildDependencies []string `json:"buildDependencies,omitempty"`
+
+	// Builder is the builder to be used to compile the package.
+	// Required.
+	Builder Builder `json:"builder"`
+
+	// Cross is whether or not the package may be cross compiled.
+	// Not supported. Reserved for future use.
+	Cross bool `json:"cross,omitempty"`
 }
 
 // Preprocess preprocesses a RawPackageGenerator into a PackageGenerator.

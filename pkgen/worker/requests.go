@@ -97,7 +97,8 @@ func (w *Worker) Mkdir(ctx context.Context, path string, mkparent bool) (err err
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		dat, err := ioutil.ReadAll(resp.Body)
+		var dat []byte
+		dat, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
