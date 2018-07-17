@@ -152,6 +152,7 @@ type Builder struct {
 	EventHandler xgraph.EventHandler
 
 	// InfoCallback is a callback run when build info is generated.
+	// Optional.
 	InfoCallback func(jobName string, info BuildInfo) error
 
 	// HashCache is a hash cache for packages
@@ -171,7 +172,7 @@ func (b *Builder) genBuildJob(ent *RawPkent, arch pkgen.Arch, bootstrap bool) *b
 	}
 
 	return &buildJob{
-		buider:       b,
+		builder:      b,
 		pkgname:      name,
 		pk:           pk,
 		bootstrapped: pkgen.Builder(ent.Pkgen.Builder).IsBootstrap(),
@@ -240,9 +241,22 @@ func (b *Builder) GetGraph() (*xgraph.Graph, []string, error) {
 }
 
 // Build runs a build using the given builder.
-// Before starting the build, lcb is called with the list of targets.
+// Before starting the build, listcallback is called with the list of targets.
+// If listcallback is nil, it will not be called.
+// The set of build targets can optionally be specified with targs (default: build all).
 // The provided context supports cancellation.
-func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) error {
+func (b *Builder) Build(ctx context.Context, listcallback func([]string) error, targs ...string) error {
+	// handle nil listcallback
+	if listcallback == nil {
+		listcallback = func([]string) error { return nil }
+	}
+
+	// handle default targs
+	if len(targs) == 0 {
+		targs = []string{"all"}
+	}
+
+	// prepare HashCache
 	if b.HashCache == nil {
 		b.HashCache = &HashCache{
 			m:  make(map[hashCacheKey]*hashCacheEntry),
@@ -252,30 +266,39 @@ func (b *Builder) Build(ctx context.Context, listcallback func([]string) error) 
 		b.HashCache.scan++
 	}
 	defer b.HashCache.Prune()
+
+	// prepare the RawPackageIndex
 	err := b.prepRPG()
 	if err != nil {
 		return err
 	}
+
+	// generate the index
 	g, lst, err := b.genGraph()
 	if err != nil {
 		return err
 	}
+
+	// run listcallback
 	err = listcallback(lst)
 	if err != nil {
 		return err
 	}
+
+	// run build
 	(&xgraph.Runner{
 		Graph:        g,
 		WorkRunner:   b.WorkRunner,
 		EventHandler: b.EventHandler,
-	}).Run(ctx, "all")
+	}).Run(ctx, targs...)
+
 	return nil
 }
 
 // buildJob is an xgraph.Job for a build.
 type buildJob struct {
 	// builder is the *Builder that this job was created by.
-	buider *Builder
+	builder *Builder
 
 	// pkgname is the name of the package being built.
 	pkgname string
@@ -324,14 +347,14 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	if bj.pk.Builder.IsBootstrap() {
 		return []string{}, nil
 	}
-	pkfs, err := bj.buider.index.DepWalker().
+	pkfs, err := bj.builder.index.DepWalker().
 		Walk(append(bj.pk.BuildDependencies, "build-meta")...)
 	if err != nil {
 		return nil, err
 	}
 	pkfs = dedup(pkfs)
 	for i, v := range pkfs {
-		bld := bj.buider.index[v]
+		bld := bj.builder.index[v]
 		pkfs[i] += ":" + bj.pk.HostArch.String()
 		if pkgen.Builder(bld.Pkgen.Builder).IsBootstrap() {
 			pkfs[i] += "-bootstrap"
@@ -367,7 +390,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 	for _, v := range bj.pk.Sources {
 		if v.Scheme == "file" {
 			sources = append(sources, filepath.Join(
-				filepath.Dir(bj.buider.index[bj.pkgname].Path),
+				filepath.Dir(bj.builder.index[bj.pkgname].Path),
 				filepath.Clean(v.Path),
 			))
 		}
@@ -392,7 +415,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 	// hash file sources
 	for i, v := range sources {
 		hashents[i].Name = filepath.Base(v)
-		h, err := hashVFS(bj.buider.SourceTree, v)
+		h, err := hashVFS(bj.builder.SourceTree, v)
 		if err != nil {
 			return nil, err
 		}
@@ -402,7 +425,7 @@ func (bj *buildJob) hash() ([]byte, error) {
 	// hash build depency packages
 	for i, v := range pkhs {
 		ent := &hashents[i+len(sources)]
-		h, err := bj.buider.HashCache.hash(parseJobName(v))
+		h, err := bj.builder.HashCache.hash(parseJobName(v))
 		ent.Hash = h[:]
 		ent.Name += ".tar"
 		if err != nil {
@@ -449,11 +472,13 @@ func (bj *buildJob) ShouldRun() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	err = bj.buider.InfoCallback(bj.Name(), bi)
-	if err != nil {
-		return false, err
+	if bj.builder.InfoCallback != nil {
+		err = bj.builder.InfoCallback(bj.Name(), bi)
+		if err != nil {
+			return false, err
+		}
 	}
-	il, err := bj.buider.BuildCache.CheckLatest(bi)
+	il, err := bj.builder.BuildCache.CheckLatest(bi)
 	if il {
 		if err == nil {
 			log.Printf("Caching build %q\n", bj.Name())
@@ -478,7 +503,7 @@ func (bj *buildJob) Dependencies() ([]string, error) {
 	}
 	for i, v := range pkfs {
 		parts := strings.Split(v, ":")
-		bld := bj.buider.index[parts[0]]
+		bld := bj.builder.index[parts[0]]
 		pkfs[i] = filepath.Base(filepath.Dir(bld.Path)) + ":" + parts[1]
 	}
 	pkfs = dedup(pkfs)
@@ -509,8 +534,8 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 
 	// set up loader
 	vns := vfs.NewNameSpace()
-	vns.Bind("/", bj.buider.SourceTree, filepath.Dir(bj.buider.index[bj.pkgname].Path), vfs.BindReplace)
-	load, err := pkgen.NewMultiLoader(pkgen.NewFileLoader(vns), bj.buider.BaseLoader)
+	vns.Bind("/", bj.builder.SourceTree, filepath.Dir(bj.builder.index[bj.pkgname].Path), vfs.BindReplace)
+	load, err := pkgen.NewMultiLoader(pkgen.NewFileLoader(vns), bj.builder.BaseLoader)
 	if err != nil {
 		return err
 	}
@@ -520,7 +545,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	bjr, err := bj.buider.CreateBuildJobRequest(bj.pk, bdeps, bj.buider.PackageRetriever, load)
+	bjr, err := bj.builder.CreateBuildJobRequest(bj.pk, bdeps, bj.builder.PackageRetriever, load)
 	if err != nil {
 		return err
 	}
@@ -530,7 +555,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	log, err := bj.buider.LogProvider.Log(inf)
+	log, err := bj.builder.LogProvider.Log(inf)
 	if err != nil {
 		return err
 	}
@@ -542,9 +567,9 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	}()
 
 	// run build
-	err = bj.buider.Client.Build(bjr, BuildOptions{
+	err = bj.builder.Client.Build(bjr, BuildOptions{
 		Out: func(name string, r io.Reader) error {
-			return bj.buider.Output.Store(inf, name, ioutil.NopCloser(r))
+			return bj.builder.Output.Store(inf, name, ioutil.NopCloser(r))
 		},
 		LogOut: log,
 	})
@@ -557,7 +582,7 @@ func (bj *buildJob) Run(ctx context.Context) (err error) {
 	if err != nil {
 		bcerror = err.Error()
 	}
-	cerr := bj.buider.BuildCache.UpdateCache(BuildCacheEntry{
+	cerr := bj.builder.BuildCache.UpdateCache(BuildCacheEntry{
 		BuildInfo: bi,
 		Error:     bcerror,
 	})
