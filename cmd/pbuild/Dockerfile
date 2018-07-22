@@ -1,4 +1,5 @@
 FROM alpine
+COPY ca-certificates.crt /etc/ssl/certs/
 RUN apk --no-cache add git
 COPY pbuild /usr/bin/pbuild
 COPY static /srv/static

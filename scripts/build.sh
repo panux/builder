@@ -17,6 +17,7 @@ dbuild() {
 }
 
 make -C static
+cp /etc/ssl/certs/ca-certificates.crt ca-certificates.crt
 
 for i in buildmanager dlserver pbuild worker; do
     gobuild $i
