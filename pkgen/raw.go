@@ -49,6 +49,10 @@ type RawPackageGenerator struct {
 
 	// Data is a set of user-defined data.
 	Data map[string]interface{}
+
+	// NoBootstrap is an option to force-unbootstrap a dependency.
+	// Format: {"python":true}
+	NoBootstrap map[string]bool
 }
 
 // Package is a package entry in a pkgen.
@@ -63,6 +67,9 @@ func UnmarshalPkgen(r io.Reader) (*RawPackageGenerator, error) {
 	err := yaml.NewDecoder(r).Decode(rpg)
 	if err != nil {
 		return nil, err
+	}
+	if rpg.NoBootstrap == nil {
+		rpg.NoBootstrap = map[string]bool{}
 	}
 	return rpg, nil
 }

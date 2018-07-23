@@ -51,6 +51,10 @@ type PackageGenerator struct {
 	// Cross is whether or not the package may be cross compiled.
 	// Not supported. Reserved for future use.
 	Cross bool `json:"cross,omitempty"`
+
+	// NoBootstrap is an option to force-unbootstrap a dependency.
+	// Format: {"python":true}
+	NoBootstrap map[string]bool `json:"nobootstrap"`
 }
 
 // Preprocess preprocesses a RawPackageGenerator into a PackageGenerator.
@@ -93,6 +97,7 @@ func (rpg *RawPackageGenerator) Preprocess(hostarch Arch, buildarch Arch, bootst
 		pg.Builder = BuilderDefault
 	}
 	pg.Cross = rpg.Cross
+	pg.NoBootstrap = rpg.NoBootstrap
 	return pg, nil
 }
 

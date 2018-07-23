@@ -356,7 +356,7 @@ func (bj *buildJob) pkgDeps() ([]string, error) {
 	for i, v := range pkfs {
 		bld := bj.builder.index[v]
 		pkfs[i] += ":" + bj.pk.HostArch.String()
-		if pkgen.Builder(bld.Pkgen.Builder).IsBootstrap() {
+		if pkgen.Builder(bld.Pkgen.Builder).IsBootstrap() && !bj.pk.NoBootstrap[v] {
 			pkfs[i] += "-bootstrap"
 		}
 	}
