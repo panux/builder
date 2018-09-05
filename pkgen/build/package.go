@@ -144,11 +144,7 @@ func BuildDepsDocker(pkg *pkgen.PackageGenerator, deps DependencyFinder, img Ima
 func mapRuleDeps(rpi RawPackageIndex, arch pkgen.Arch, deps ...string) []string {
 	rdeps := map[string]struct{}{}
 	for _, d := range deps {
-		ent, ok := rpi[d]
-		if !ok {
-			continue
-		}
-		rdeps[filepath.Base(filepath.Dir(ent.Path))] = struct{}{}
+		rdeps[filepath.Base(filepath.Dir(rpi[d].Path))] = struct{}{}
 	}
 
 	res := make([]string, len(rdeps))

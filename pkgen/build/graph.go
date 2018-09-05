@@ -127,6 +127,7 @@ func Graph(rpi RawPackageIndex, opts GraphOptions) (*xgraph.Graph, error) {
 			pr: opts.Packages,
 		}
 	}
+	opts.rpi = rpi
 
 	// create graph
 	g := xgraph.New()
