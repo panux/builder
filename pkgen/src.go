@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"path/filepath"
 )
 
@@ -13,8 +12,8 @@ import (
 // Also includes the Makefile in the tar.
 // May buffer files of unknown size up to maxbuf bytes in memory.
 // Context may be used for cancellation of internal steps.
-// Closing of the io.Writer is necessary to garuntee cancellation.
-func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loader Loader, maxbuf uint) (err error) {
+// Closing of the underlying io.Writer is necessary to garuntee cancellation.
+func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, path string, tw *tar.Writer, loader Loader, maxbuf int64) (err error) {
 	// handle cancellation errors
 	defer func() {
 		if ctxerr := ctx.Err(); ctxerr != nil {
@@ -22,14 +21,8 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 		}
 	}()
 
-	// prepare tar writer
-	tw := tar.NewWriter(w)
-	defer func() {
-		cerr := tw.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
+	// wrap loader for in-memory buffering
+	loader = BufferLoader(loader, maxbuf)
 
 	// generate Makefile
 	buf := bytes.NewBuffer(nil)
@@ -38,7 +31,7 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 		return err
 	}
 	err = tw.WriteHeader(&tar.Header{
-		Name: "Makefile",
+		Name: filepath.Join(path, "Makefile"),
 		Mode: 0600,
 		Size: int64(buf.Len()),
 	})
@@ -58,7 +51,7 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 			return err
 		}
 		err = tw.WriteHeader(&tar.Header{
-			Name: inf.Name + ".pkginfo",
+			Name: filepath.Join(path, inf.Name+".pkginfo"),
 			Mode: 0600,
 			Size: int64(buf.Len()),
 		})
@@ -87,24 +80,9 @@ func (pg *PackageGenerator) WriteSourceTar(ctx context.Context, w io.Writer, loa
 			}
 		}()
 
-		// buffer files of unknown size in memory
-		if l < 1 {
-			b := bytes.NewBuffer(nil)
-			mr := maxReader{
-				r: r,
-				n: maxbuf,
-			}
-			_, err = io.Copy(b, &mr)
-			if err != nil {
-				return
-			}
-			l = int64(b.Len())
-			r = ioutil.NopCloser(b)
-		}
-
 		// store source into tar
 		err = tw.WriteHeader(&tar.Header{
-			Name: filepath.Base(s.Path),
+			Name: filepath.Join(path, filepath.Base(s.Path)),
 			Mode: 0600,
 			Size: l,
 		})

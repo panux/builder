@@ -16,7 +16,7 @@ import (
 // httpLoader is a Loader which loads data over HTTP.
 type httpLoader struct {
 	cli    *http.Client
-	maxbuf uint
+	maxbuf int64
 }
 
 // hprotos is the set of protocols supported by httpLoader.
@@ -83,7 +83,7 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 		if !bytes.Equal(h.Sum(nil), shs) {
 			return -1, nil, errors.New("hash mismatch")
 		}
-		return resp.ContentLength, ioutil.NopCloser(buf), nil
+		return int64(buf.Len()), ioutil.NopCloser(buf), nil
 	}
 
 	// return regular response
@@ -93,29 +93,30 @@ func (hl *httpLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser
 // maxReader is a reader that returns ErrExceedsMaxBuffer if too much is read.
 type maxReader struct {
 	r io.Reader
-	n uint
+	n int64
 }
 
 func (mr *maxReader) Read(dat []byte) (int, error) {
 	n, err := mr.r.Read(dat)
-	if uint(n) > mr.n {
+	if int64(n) > mr.n {
 		return n, ErrExceedsMaxBuffer
 	}
-	mr.n -= uint(n)
+	mr.n -= int64(n)
 	return n, err
 }
 
-// NewHTTPLoader returns a new Loader which loads content over HTTP.
+// HTTPLoader returns a new Loader which loads content over HTTP.
 // client is the HTTP client to use to make the requests.
 // if client is nil, it will use http.DefaultClient.
 // maxbuf is the maximum number of bytes to buffer in memory when necessary.
 // data will only be buffered in memory when there is an attached hash.
-func NewHTTPLoader(client *http.Client, maxbuf uint) Loader {
+func HTTPLoader(client *http.Client, maxbuf int64) Loader {
 	if client == nil {
 		client = http.DefaultClient
 	}
 	client.Jar, _ = cookiejar.New(nil)
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		// sourceforge does strange things without this
 		if req.URL.Hostname() == "sourceforge.net" {
 			req.Header.Del("Referer")
 		}

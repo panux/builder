@@ -20,7 +20,7 @@ func (fl fileLoader) SupportedProtocols() ([]string, error) {
 }
 
 func (fl fileLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser, error) {
-	var l int64
+	var l int64 = -1
 	info, err := fl.fs.Stat(u.Path)
 	if err == nil {
 		l = info.Size()
@@ -32,7 +32,7 @@ func (fl fileLoader) Get(ctx context.Context, u *url.URL) (int64, io.ReadCloser,
 	return l, f, nil
 }
 
-// NewFileLoader returns a new Loader which loads files from the given VFS.
-func NewFileLoader(fs vfs.FileSystem) Loader {
+// FileLoader returns a Loader which loads files from the given VFS.
+func FileLoader(fs vfs.FileSystem) Loader {
 	return fileLoader{fs: fs}
 }

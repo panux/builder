@@ -1,12 +1,3 @@
-sudo: required
-services:
-  - docker
+language: go
 script:
-  - ./build.sh
-after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    for i in dlserver worker worker:alpine buildmanager pbuild; do
-    docker push panux/$i;
-    done;
-    fi
+  - echo ci currently disabled

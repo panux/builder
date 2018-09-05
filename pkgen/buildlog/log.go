@@ -4,6 +4,7 @@ package buildlog
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -28,22 +29,47 @@ const (
 	StreamMeta Stream = 4
 )
 
+// Valid returns whether the stream is valid.
+func (s Stream) Valid() bool {
+	switch s {
+	case StreamStdout, StreamStderr, StreamBuild, StreamMeta:
+		return true
+	default:
+		return false
+	}
+}
+
 func (s Stream) String() string {
 	switch s {
 	case StreamStdout:
 		return "stdout"
-
 	case StreamStderr:
 		return "stderr"
-
 	case StreamBuild:
 		return "build"
-
 	case StreamMeta:
 		return "meta"
-
 	default:
 		return "invalid"
+	}
+}
+
+// ErrInvalidStream is an error indicating that the stream is not valid.
+var ErrInvalidStream = errors.New("invalid stream")
+
+// ParseStream parses a Stream by name.
+func ParseStream(name string) (Stream, error) {
+	switch name {
+	case "stdout":
+		return StreamStdout, nil
+	case "stderr":
+		return StreamStderr, nil
+	case "build":
+		return StreamBuild, nil
+	case "meta":
+		return StreamMeta, nil
+	default:
+		return 0, ErrInvalidStream
 	}
 }
 
@@ -90,10 +116,10 @@ func StdLogHandler(l *log.Logger) Handler {
 // It logs to stderr.
 var DefaultHandler = StdLogHandler(log.New(os.Stderr, "", log.LstdFlags))
 
-// NewLogWriter returns an io.WriteCloser that is logged.
+// LogWriter returns an io.WriteCloser that is logged.
 // The Handler must be mutexed if it is also used by anything else.
 // Spawns a goroutine.
-func NewLogWriter(lh Handler, stream Stream) io.WriteCloser {
+func LogWriter(lh Handler, stream Stream) io.WriteCloser {
 	piper, pipew := io.Pipe()
 	lw := &logWriter{
 		pipew: pipew,
@@ -140,7 +166,7 @@ func ReadLog(lh Handler, stream Stream, r io.Reader) error {
 		})
 	}
 	err := s.Err()
-	if err != io.EOF {
+	if err != nil {
 		return err
 	}
 	return nil
@@ -164,8 +190,8 @@ func (mlh *mutexedLogHandler) Close() error {
 	return mlh.lh.Close()
 }
 
-// NewMutexedLogHandler returns a Handler which is thread-safe.
-func NewMutexedLogHandler(handler Handler) Handler {
+// MutexedLogHandler returns a Handler which is thread-safe.
+func MutexedLogHandler(handler Handler) Handler {
 	return &mutexedLogHandler{lh: handler}
 }
 
@@ -218,7 +244,7 @@ func (ml multiLogger) Close() error {
 	return nil
 }
 
-// NewMultiLogHandler returns a Handler that logs to all given handlers.
-func NewMultiLogHandler(handlers ...Handler) Handler {
+// MultiLogHandler returns a Handler that logs to all given handlers.
+func MultiLogHandler(handlers ...Handler) Handler {
 	return multiLogger(handlers)
 }

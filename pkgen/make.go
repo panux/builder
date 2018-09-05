@@ -154,14 +154,30 @@ func (pg *PackageGenerator) GenMake(mv MakeVars, b *makefile.Builder) {
 	}
 
 	// add rule to un-tar source
+	basics.Comment().
+		Line(
+			fmt.Sprintf(
+				"If %s is set to %s, no extraction will be preformed.",
+				string(mv.SrcTar),
+				srct.Convert(),
+			),
+		)
 	basics.NewRule(uts).
-		AddDep(mv.SrcTar.Sub()).AddDep(srct).
-		NewCmd("tar").
-		AddArg(makefile.RawText("-xvf")).AddArg(makefile.Dep1).
-		AddArg(makefile.RawText("-C")).AddArg(srct)
+		AddDep(mv.SrcTar.Sub()).
+		NewCmd(
+			fmt.Sprintf("if [ %s != %s ]; then tar -xvf %s -C %s; fi",
+				makefile.Dep1.Convert(),
+				srct.Convert(),
+				makefile.Dep1.Convert(),
+				srct.Convert(),
+			),
+		)
 
 	// add script rule
-	sr := b.NewRule(st).OneShell().AddDep(uts).AddDep(makefile.RawText("pkginfos"))
+	sr := b.NewRule(st).
+		OneShell().
+		AddDep(uts).
+		AddDep(makefile.RawText("pkginfos"))
 	sr.NewCmd("set -ex")
 	for _, l := range pg.Script {
 		sr.NewCmd(l)

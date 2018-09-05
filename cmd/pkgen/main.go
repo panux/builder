@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/tar"
 	"compress/gzip"
 	"context"
 	"errors"
@@ -273,12 +274,12 @@ func main() {
 						}
 					}
 				}()
-				l, err := pkgen.NewMultiLoader(
-					pkgen.NewHTTPLoader(
+				l, err := pkgen.MultiLoader(
+					pkgen.HTTPLoader(
 						http.DefaultClient,
-						ctx.Uint("maxbuf"),
+						ctx.Int64("maxbuf"),
 					),
-					pkgen.NewFileLoader(
+					pkgen.FileLoader(
 						vfs.OS(
 							filepath.Dir(
 								ctx.Args()[0],
@@ -290,8 +291,16 @@ func main() {
 					return cli.NewExitError(err, 65)
 				}
 				// generate tar
-				err = pg.WriteSourceTar(cctx, w, l, ctx.Uint("maxbuf"))
-				return
+				tw := tar.NewWriter(w)
+				err = pg.WriteSourceTar(cctx, "", tw, l, ctx.Int64("maxbuf"))
+				if err != nil {
+					return cli.NewExitError(err, 65)
+				}
+				err = tw.Close()
+				if err != nil {
+					return cli.NewExitError(err, 65)
+				}
+				return nil
 			},
 		},
 		cli.Command{
