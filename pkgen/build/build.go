@@ -136,11 +136,11 @@ cd $(dirname $0)
 if [ -e deps ]; then
 	for i in $(cat deps/deps.list); do
 		lpkg-inst $i
-	end
+	done
 fi
 
 # run build
-make -j8
+make -j8 SRCTAR=src pkgs.tar
 `)
 
 // Build builds a package.
@@ -176,7 +176,7 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 		opts.Ctx,
 		&container.Config{
 			Image: opts.DockerImage.Image,
-			Cmd:   []string{"/root/build/build.sh"},
+			Cmd:   []string{"/root/build.sh"},
 		},
 		nil, nil, "",
 	)
@@ -194,6 +194,19 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 			err = cerr
 		}
 	}()
+
+	// start container
+	err = opts.Log.Log(buildlog.Line{
+		Stream: buildlog.StreamBuild,
+		Text:   "Starting container. . .",
+	})
+	if err != nil {
+		return err
+	}
+	err = opts.Docker.ContainerStart(opts.Ctx, containerCreate.ID, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
 
 	// prepare to create build inputs
 	err = opts.Log.Log(buildlog.Line{
@@ -220,6 +233,9 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 			pr,
 			types.CopyToContainerOptions{},
 		)
+		if dcerr != nil {
+			panic(dcerr)
+		}
 	}()
 	defer pw.Close()
 
@@ -265,10 +281,11 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 	if err != nil {
 		return err
 	}
+dloop:
 	for _, v := range deps {
 		for _, p := range opts.DockerImage.Packages {
 			if v == p {
-				continue
+				continue dloop
 			}
 		}
 
@@ -350,10 +367,6 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 	if err != nil {
 		return err
 	}
-	err = opts.Docker.ContainerStart(opts.Ctx, containerCreate.ID, types.ContainerStartOptions{})
-	if err != nil {
-		return err
-	}
 
 	// log build
 	lr, err := opts.Docker.ContainerLogs(opts.Ctx, containerCreate.ID, types.ContainerLogsOptions{
@@ -427,9 +440,6 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 				return nil
 			}
 			return err
-		}
-		if hdr.Typeflag != tar.TypeReg {
-			continue
 		}
 		spl := strings.Split(filepath.Base(hdr.Name), ".")
 		if len(spl) < 2 {

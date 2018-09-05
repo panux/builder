@@ -183,14 +183,14 @@ func hashObjectJSON(obj interface{}, dest *[sha256.Size]byte) error {
 }
 
 // HashPackage hashes the inputs of a package.
-func HashPackage(ctx context.Context, pkg *pkgen.PackageGenerator, loader pkgen.Loader, hc *HashCache, docker Image, deps DependencyFinder) ([sha256.Size]byte, error) {
+func HashPackage(ctx context.Context, pkg *pkgen.PackageGenerator, loader pkgen.Loader, hc *HashCache, docker Image, deps DependencyFinder) (hashhh [sha256.Size]byte, err error) {
 	// hash pkgen
 	tbl := []hashRow{
 		hashRow{
 			URL: "meta://pkgen.json",
 		},
 	}
-	err := hashObjectJSON(pkg, &tbl[0].Hash)
+	err = hashObjectJSON(pkg, &tbl[0].Hash)
 	if err != nil {
 		return [sha256.Size]byte{}, err
 	}
@@ -215,12 +215,12 @@ func HashPackage(ctx context.Context, pkg *pkgen.PackageGenerator, loader pkgen.
 	if err != nil {
 		return [sha256.Size]byte{}, err
 	}
-
+dloop:
 	for _, d := range dlst {
 		// skip packages in container
 		for _, v := range docker.Packages {
 			if v == d {
-				continue
+				continue dloop
 			}
 		}
 

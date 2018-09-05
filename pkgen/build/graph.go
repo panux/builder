@@ -53,7 +53,11 @@ func (j *job) ShouldRun() (bool, error) {
 		return false, err
 	}
 	j.info.Hash = hash
-	return j.gopts.Cache.Valid(j.info)
+	ok, err := j.gopts.Cache.Valid(j.info)
+	if err != nil {
+		return false, nil
+	}
+	return !ok, nil
 }
 
 func (j *job) Dependencies() ([]string, error) {
@@ -72,6 +76,7 @@ func (j *job) Run(ctx context.Context) error {
 		return err
 	}
 	opts.Log = log
+	opts.Loader = j.loader
 	return Build(j.pkg, opts)
 }
 
@@ -119,11 +124,11 @@ func Graph(rpi RawPackageIndex, opts GraphOptions) (*xgraph.Graph, error) {
 	g := xgraph.New()
 
 	// find pkgens
-	lst := rpi.List()
 	rules := []string{}
+	lst := rpi.List()
 	for _, name := range lst {
-		ent := rpi[name]
-		if ent.Pkgen.Arch.Supports(opts.Arch) {
+		ent, ok := rpi[name]
+		if ok && ent.Pkgen.Arch.Supports(opts.Arch) {
 			// create job
 			job, err := newJob(ent, &opts)
 			if err != nil {

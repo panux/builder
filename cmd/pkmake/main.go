@@ -44,7 +44,7 @@ func main() {
 	g, err := build.Graph(rpi, build.GraphOptions{
 		Options: build.Options{
 			Docker:       dcli,
-			DockerImage:  loadDockerImg(),
+			DockerImage:  loadDockerImg(rpi),
 			Output:       dirstore,
 			Packages:     dirstore,
 			Dependencies: rpi,
@@ -81,7 +81,7 @@ func main() {
 	}).Run(ctx, args...)
 }
 
-func loadDockerImg() build.Image {
+func loadDockerImg(rpi build.RawPackageIndex) build.Image {
 	var img build.Image
 	f, err := os.Open("docker.json")
 	if err != nil {
@@ -92,6 +92,11 @@ func loadDockerImg() build.Image {
 	if err != nil {
 		panic(err)
 	}
+	pkgs, err := rpi.FindDependencies(img.Packages...)
+	if err != nil {
+		panic(err)
+	}
+	img.Packages = pkgs
 	return img
 }
 

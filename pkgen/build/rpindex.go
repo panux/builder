@@ -77,6 +77,7 @@ func (rpi RawPackageIndex) addPkent(ent *RawPkent) {
 	for p := range ent.Pkgen.Packages {
 		rpi[p] = ent
 	}
+	rpi[filepath.Base(filepath.Dir(ent.Path))] = ent
 }
 
 // loadEnt loads a package entry.

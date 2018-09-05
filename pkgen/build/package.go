@@ -1,13 +1,10 @@
 package build
 
 import (
-	"archive/tar"
 	"crypto/sha256"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"gitlab.com/panux/builder/pkgen"
 )
@@ -61,38 +58,24 @@ func (ds dirStore) writeFile(name string, src io.Reader) (err error) {
 	return nil
 }
 
-func (ds dirStore) Store(name string, arch pkgen.Arch, body io.Reader) error {
-	// open tar
-	tr := tar.NewReader(body)
-
-	for {
-		// read header
-		hdr, err := tr.Next()
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-
-		// validate header
-		finf := hdr.FileInfo()
-		if mode := finf.Mode(); !mode.IsRegular() {
-			return fmt.Errorf("file %q is not a regular file", hdr.Name)
-		}
-		if dir, file := filepath.Split(filepath.Join(hdr.Name)); dir != "" {
-			return fmt.Errorf("file %q is in a directory", file)
-		}
-		if !strings.HasSuffix(hdr.Name, ".tar.gz") {
-			return fmt.Errorf("file %q does not have extension .tar.gz", hdr.Name)
-		}
-
-		// write file
-		err = ds.writeFile(hdr.Name, tr)
-		if err != nil {
-			return err
-		}
+func (ds dirStore) Store(name string, arch pkgen.Arch, body io.Reader) (err error) {
+	f, err := os.OpenFile(filepath.Join(ds.dir, name+"-"+arch.String()+".tar.gz"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
 	}
+	defer func() {
+		cerr := f.Close()
+		if cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+
+	_, err = io.Copy(f, body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ds dirStore) GetPkg(name string, arch pkgen.Arch) (io.ReadCloser, int64, error) {
@@ -161,7 +144,11 @@ func BuildDepsDocker(pkg *pkgen.PackageGenerator, deps DependencyFinder, img Ima
 func mapRuleDeps(rpi RawPackageIndex, arch pkgen.Arch, deps ...string) []string {
 	rdeps := map[string]struct{}{}
 	for _, d := range deps {
-		rdeps[filepath.Base(filepath.Dir(rpi[d].Path))] = struct{}{}
+		ent, ok := rpi[d]
+		if !ok {
+			continue
+		}
+		rdeps[filepath.Base(filepath.Dir(ent.Path))] = struct{}{}
 	}
 
 	res := make([]string, len(rdeps))

@@ -131,7 +131,7 @@ func (tl *textLogger) logStream(name string, line Line) error {
 	tl.lck.Lock()
 	defer tl.lck.Unlock()
 
-	_, err := fmt.Fprintf(tl.w, "[%s][%s] %s", name, line.Stream.String(), line.Text)
+	_, err := fmt.Fprintf(tl.w, "[%s][%s] %s\n", name, line.Stream.String(), line.Text)
 	if err != nil {
 		return err
 	}
