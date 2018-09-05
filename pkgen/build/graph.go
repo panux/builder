@@ -77,7 +77,15 @@ func (j *job) Run(ctx context.Context) error {
 	}
 	opts.Log = log
 	opts.Loader = j.loader
-	return Build(j.pkg, opts)
+	err = Build(j.pkg, opts)
+	if err != nil {
+		return err
+	}
+	err = j.gopts.Cache.Update(j.info)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func newJob(pkg *RawPkent, opts *GraphOptions) (*job, error) {

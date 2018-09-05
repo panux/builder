@@ -176,7 +176,7 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 		opts.Ctx,
 		&container.Config{
 			Image: opts.DockerImage.Image,
-			Cmd:   []string{"/root/build.sh"},
+			Cmd:   []string{"/root/build/build.sh"},
 		},
 		nil, nil, "",
 	)
@@ -194,19 +194,6 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 			err = cerr
 		}
 	}()
-
-	// start container
-	err = opts.Log.Log(buildlog.Line{
-		Stream: buildlog.StreamBuild,
-		Text:   "Starting container. . .",
-	})
-	if err != nil {
-		return err
-	}
-	err = opts.Docker.ContainerStart(opts.Ctx, containerCreate.ID, types.ContainerStartOptions{})
-	if err != nil {
-		return err
-	}
 
 	// prepare to create build inputs
 	err = opts.Log.Log(buildlog.Line{
@@ -233,9 +220,6 @@ func Build(pkg *pkgen.PackageGenerator, opts Options) (err error) {
 			pr,
 			types.CopyToContainerOptions{},
 		)
-		if dcerr != nil {
-			panic(dcerr)
-		}
 	}()
 	defer pw.Close()
 
@@ -364,6 +348,10 @@ dloop:
 		Stream: buildlog.StreamBuild,
 		Text:   "Starting build. . .",
 	})
+	if err != nil {
+		return err
+	}
+	err = opts.Docker.ContainerStart(opts.Ctx, containerCreate.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return err
 	}
